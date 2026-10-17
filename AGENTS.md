@@ -4,8 +4,9 @@ Read README.md and docs/LEDGER.md before editing. The browser is a read-only
 projection; JSON is authoritative. Browser selection, zoom and copied task briefs
 never start work or change task state.
 
-- Preserve LICENSE.md and source attribution in docs/provenance.json. This is a
-  private, proprietary repository; do not make it public or change its license.
+- Preserve LICENSE.md and source attribution in docs/provenance.json. The owner
+  authorized public visibility on 2026-10-17 after credential scanning; this does
+  not change the proprietary license. Do not add secrets or private project data.
 - Keep the runtime dependency-free: Python 3.11+ standard library and browser APIs.
 - Keep generic sample data visibly fictional. Never copy another project's private
   ledger, evidence, credentials or host configuration into the template.

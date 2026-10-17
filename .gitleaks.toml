@@ -1,0 +1,17 @@
+title = "Task Dashboard credential checks"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Verified SHA-256 digests of the two tokens.css source assets; see docs/SECRET-SCAN.md"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)docs/(provenance|verification)\.json$''']
+regexes = [
+  '''^96d733b423b11328092c59a9e3acf43a719e724f7482f0bbd19ba556a9a11dcf$''',
+  '''^dfe357b338a93e482fcd9a2b50c2a9e6da72b202298b839d073be8b807a0b4ce$''',
+]

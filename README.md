@@ -45,7 +45,7 @@ python tools/tasks.py render --check
 
 ## Reuse in another project
 
-Use GitHub's **Use this template** to create another private repository, or keep
+Authorized users can use GitHub's **Use this template** to create their own repository, or keep
 this checkout as a shared tool and point it at a ledger in another project.
 
 Initialize a fresh ledger in a new directory:
@@ -105,7 +105,8 @@ an HTML fragment for an embedding host. Normal snapshots are complete HTML files
 
 ## Ownership
 
-Private and proprietary; [LICENSE.md](LICENSE.md) is retained unchanged. This
-extraction was requested by the owner for reuse across their projects and is not
-an open-source release. [Provenance](docs/provenance.json) records the original
-dashboard input hashes. Original product code, task data and history are absent.
+Publicly visible with the owner's authorization; the proprietary
+[LICENSE.md](LICENSE.md) is retained unchanged. Public visibility does not grant
+an open-source license. This extraction was requested for reuse across the owner's
+projects. [Provenance](docs/provenance.json) records the original dashboard input
+hashes. Original product code, task data and history are absent.
