@@ -1,0 +1,477 @@
+<section id="task-dashboard" aria-label="Milestone task board" data-ci="signal-inspector">
+  <style>
+    __CI_TOKENS__
+    __BOARD_STYLES__
+  </style>
+
+  <div class="board-header">
+    <div>
+      <h1 data-board-title></h1>
+      <p class="metro-muted metro-small" data-board-meta></p>
+    </div>
+    <p class="metro-muted metro-small" data-baseline></p>
+  </div>
+
+  <div class="metro-grid" aria-label="Current task counts">
+    <div class="metro-stat">
+      <span class="metro-muted">Planning and decisions</span>
+      <span class="metro-value tabular-nums" data-planning-count></span>
+      <span class="metro-small" data-planning-state></span>
+    </div>
+    <div class="metro-stat">
+      <span class="metro-muted">Implementation and qualification</span>
+      <span class="metro-value tabular-nums" data-product-count></span>
+      <span class="metro-small" data-product-state></span>
+    </div>
+  </div>
+
+  <div class="metro-grid" data-phase-grid aria-label="Select a phase"></div>
+
+  <div class="view-controls" role="group" aria-label="Board view">
+    <button type="button" class="cursor-interaction" data-view="worktree">Worktree</button>
+    <button type="button" class="cursor-interaction" data-view="flow">Flowchart</button>
+    <button type="button" class="cursor-interaction" data-view="list">Task list</button>
+  </div>
+  <section data-flow aria-label="Selected task dependency flowchart">
+    <h2>Task dependencies</h2>
+    <p class="metro-small metro-muted">Prerequisites → selected task → dependent tasks. Select a tile to follow its connections.</p>
+    <div class="flow-layout" data-flow-layout>
+      <svg class="flow-lines" aria-hidden="true"><defs><marker id="board-flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ci-line-strong)" /></marker></defs><g data-flow-edges></g></svg>
+      <div class="flow-column" data-flow-before aria-label="Prerequisites"></div>
+      <div class="flow-column" data-flow-current aria-label="Selected task"></div>
+      <div class="flow-column" data-flow-after aria-label="Dependent tasks"></div>
+    </div>
+  </section>
+  <div class="board-workspace" data-workspace>
+    <section class="map-panel" data-worktree aria-label="Worktree: all task dependencies" hidden>
+      <div class="map-toolbar" role="group" aria-label="Canvas controls">
+        <span class="map-count" data-map-count></span>
+        <button type="button" data-map-action="out" aria-label="Zoom out">−</button>
+        <output data-map-zoom aria-label="Zoom level">100%</output>
+        <button type="button" data-map-action="in" aria-label="Zoom in">+</button>
+        <button type="button" data-map-action="fit">Fit all</button>
+        <button type="button" data-map-action="reset" aria-label="Reset zoom to 100 percent">1:1</button>
+        <button type="button" data-map-action="selected">Centre selected</button>
+        <button type="button" data-map-action="expand" aria-pressed="false">Expand</button>
+        <button type="button" data-map-action="help" aria-expanded="false" aria-controls="board-map-help">Help</button>
+      </div>
+      <div class="map-help" id="board-map-help" data-map-help hidden>
+        <p>Dependencies run left to right; parallel tasks share a column. Drag to pan. Scroll or pinch to zoom. Select a task for its full details and highlighted connections.</p>
+        <p><kbd>Arrow keys</kbd> pan · <kbd>+</kbd> / <kbd>−</kbd> zoom · <kbd>0</kbd> fit all · <kbd>1</kbd> actual size · <kbd>F</kbd> centre selected · <kbd>Esc</kbd> close help / restore.</p>
+        <p>Click the overview to move across the canvas. All interactions change this view only.</p>
+      </div>
+      <div class="map-viewport" data-map-viewport tabindex="0" role="region" aria-label="Task canvas. Arrow keys pan, plus and minus zoom, zero fits all." aria-describedby="board-map-help">
+        <div class="map-world" data-map-world>
+          <svg class="map-edges" width="100%" height="100%" aria-hidden="true"><defs><marker id="board-map-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ci-line-strong)" /></marker><marker id="board-map-selected-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ci-focus)" /></marker></defs><g data-map-edges></g></svg>
+        </div>
+      </div>
+      <div class="map-footer">
+        <span class="map-legend" data-map-legend></span>
+        <span class="metro-muted">Dependency order: prerequisite → dependent</span>
+        <svg class="map-minimap" data-minimap role="img" aria-label="Overview of all tasks and the current viewport"><rect data-mini-view /></svg>
+      </div>
+      <div class="map-tooltip" id="board-map-tooltip" role="tooltip" data-map-tooltip hidden></div>
+    </section>
+    <section aria-labelledby="phase-task-heading" data-list-panel>
+      <h2 id="phase-task-heading" data-phase-title></h2>
+      <p class="metro-muted metro-small" data-phase-gate></p>
+      <div class="task-list" data-task-list></div>
+    </section>
+
+    <section class="metro-detail" aria-live="polite" data-detail>
+      <div class="detail-head">
+        <h2 data-task-title></h2>
+        <span class="metro-badge" data-task-status></span>
+      </div>
+      <div class="detail-meta metro-small">
+        <span data-task-kind></span>
+        <span data-task-owner></span>
+        <span data-task-role></span>
+      </div>
+      <div class="task-tags" data-task-tags aria-label="Task categories"></div>
+      <div class="detail-section">
+        <h3>Acceptance</h3>
+        <ul data-acceptance></ul>
+      </div>
+      <div class="detail-section">
+        <h3>Dependencies</h3>
+        <ul data-dependencies></ul>
+      </div>
+      <div class="detail-section">
+        <h3>Validation</h3>
+        <ul data-validation></ul>
+      </div>
+      <div class="detail-section">
+        <h3>Evidence</h3>
+        <ul data-evidence></ul>
+      </div>
+      <details data-task-context>
+        <summary>Task context</summary>
+        <div class="detail-section">
+          <h3>Scope</h3>
+          <ul data-scope></ul>
+        </div>
+        <div class="detail-section" data-blocked-section>
+          <h3>Blocked reason</h3>
+          <p data-blocked-reason></p>
+        </div>
+        <div class="detail-section" data-review-section>
+          <h3>Review</h3>
+          <p data-review></p>
+        </div>
+        <div class="detail-section" data-notes-section>
+          <h3>Notes</h3>
+          <p data-notes></p>
+        </div>
+      </details>
+      <div class="metro-actions action-row">
+        <button type="button" class="metro-primary cursor-interaction" data-request-work>Copy task brief</button>
+        <p class="metro-muted metro-small action-note" data-action-note role="status"></p>
+        <textarea data-task-brief aria-label="Task brief to copy" readonly hidden></textarea>
+      </div>
+    </section>
+  </div>
+
+  <script type="application/json" id="task-dashboard-data">__BOARD_DATA__</script>
+  <script>
+    (() => {
+      __BOARD_SCRIPTS__
+      const root = document.getElementById("task-dashboard");
+      const dataNode = document.getElementById("task-dashboard-data");
+      if (!root || !dataNode) return;
+      const board = JSON.parse(dataNode.textContent);
+      const byId = new Map(board.tasks.map(task => [task.id, task]));
+      const query = selector => root.querySelector(selector);
+      const all = selector => Array.from(root.querySelectorAll(selector));
+      const dependenciesDone = task => task.depends_on.every(id => byId.get(id)?.status === "done");
+      const shownStatus = task => task.status === "planned" && dependenciesDone(task) ? "ready" : task.status;
+      const storageKey = `task-dashboard:${location.pathname}:${board.milestone.id}`;
+      let localState;
+      try { localState = JSON.parse(localStorage.getItem(storageKey)); } catch {}
+      const stored = window.openai?.widgetState?.privateContent || localState;
+      const saved = stored && typeof stored === "object" ? stored : {};
+      const requestedView = new URLSearchParams(location.search).get('view');
+      let viewMode = ["flow", "list", "worktree"].includes(requestedView) ? requestedView
+        : ["flow", "list", "worktree"].includes(saved.viewMode) ? saved.viewMode : "flow";
+      let taskMap;
+      const firstReady = board.tasks.find(task => shownStatus(task) === "ready");
+      const firstTask = firstReady || board.tasks[0];
+      const selectionFor = state => {
+        const task = byId.get(state.selectedTaskId);
+        const phase = board.phases.find(item => item.id === state.selectedPhaseId);
+        const selectedPhaseId = task?.phase || phase?.id || firstTask?.phase || board.phases[0]?.id;
+        const candidates = board.tasks.filter(item => item.phase === selectedPhaseId);
+        return {selectedPhaseId, selectedTaskId: task?.id ||
+          candidates.find(item => shownStatus(item) === "ready")?.id || candidates[0]?.id};
+      };
+      let {selectedTaskId, selectedPhaseId} = selectionFor(saved);
+
+      const label = value => String(value).replaceAll("_", " ");
+      const tagChip = tag => {
+        const chip = document.createElement("span");
+        chip.className = "task-tag";
+        chip.textContent = tag;
+        const key = tag.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        chip.dataset.category = key;
+        return chip;
+      };
+      const fillList = (element, values, emptyText) => {
+        element.replaceChildren();
+        const items = values.length ? values : [emptyText];
+        items.forEach(value => {
+          const item = document.createElement("li");
+          item.textContent = value;
+          element.append(item);
+        });
+      };
+      const categoryText = tasks => {
+        const counts = new Map();
+        tasks.forEach(task => counts.set(shownStatus(task), (counts.get(shownStatus(task)) || 0) + 1));
+        return ["ready", "active", "review", "blocked", "done", "planned", "deferred"]
+          .filter(status => counts.get(status))
+          .map(status => `${counts.get(status)} ${status}`)
+          .join(" · ") || "No tasks";
+      };
+      const saveState = () => {
+        const state = { selectedTaskId, selectedPhaseId, viewMode, camera: taskMap?.state() };
+        try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch {}
+        if (typeof window.openai?.setWidgetState === "function") {
+          window.openai.setWidgetState({modelContent: {selectedTaskId, selectedPhaseId, viewMode},
+            privateContent: state}).catch(() => {});
+        }
+      };
+
+      query("[data-board-title]").textContent = board.milestone.title;
+      query("[data-board-meta]").textContent = `${board.milestone.id} · Updated ${board.milestone.updated_at}`;
+      query("[data-baseline]").textContent = board.milestone.baseline_status;
+      const planning = board.tasks.filter(task => task.kind === "planning" || task.kind === "decision");
+      const product = board.tasks.filter(task => task.kind === "implementation" || task.kind === "qualification");
+      query("[data-planning-count]").textContent = planning.length;
+      query("[data-planning-state]").textContent = categoryText(planning);
+      query("[data-product-count]").textContent = product.length;
+      query("[data-product-state]").textContent = categoryText(product);
+
+      const renderPhases = () => {
+        const grid = query("[data-phase-grid]");
+        grid.replaceChildren();
+        board.phases.forEach(phase => {
+          const tasks = board.tasks.filter(task => task.phase === phase.id);
+          const done = tasks.filter(task => task.status === "done").length;
+          const percent = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "metro-phase cursor-interaction";
+          button.setAttribute("aria-pressed", phase.id === selectedPhaseId ? "true" : "false");
+          button.setAttribute("aria-label", `${phase.title}: ${done} of ${tasks.length} done`);
+          const title = document.createElement("div");
+          title.textContent = phase.title;
+          const meta = document.createElement("div");
+          meta.className = "metro-muted metro-small tabular-nums";
+          meta.textContent = `${done}/${tasks.length} done`;
+          const progress = document.createElement("div");
+          progress.className = "metro-progress";
+          progress.setAttribute("role", "progressbar");
+          progress.setAttribute("aria-label", `${phase.title} completion`);
+          progress.setAttribute("aria-valuenow", String(percent));
+          progress.setAttribute("aria-valuemin", "0");
+          progress.setAttribute("aria-valuemax", "100");
+          const bar = document.createElement("div");
+          bar.className = "metro-bar";
+          bar.style.width = `${percent}%`;
+          progress.append(bar);
+          button.append(title, meta, progress);
+          button.addEventListener("click", () => {
+            selectedPhaseId = phase.id;
+            const candidates = board.tasks.filter(task => task.phase === phase.id);
+            selectedTaskId = candidates.find(task => shownStatus(task) === "ready")?.id || candidates[0]?.id;
+            render();
+            saveState();
+          });
+          grid.append(button);
+        });
+      };
+
+      const renderTasks = () => {
+        const phase = board.phases.find(item => item.id === selectedPhaseId);
+        query("[data-phase-title]").textContent = phase?.title || "Tasks";
+        query("[data-phase-gate]").textContent = phase ? `Gate: ${phase.gate}` : "";
+        const list = query("[data-task-list]");
+        list.replaceChildren();
+        const tasks = board.tasks.filter(task => task.phase === selectedPhaseId);
+        if (!tasks.length) {
+          const empty = document.createElement("p");
+          empty.className = "metro-muted empty";
+          empty.textContent = "No tasks in this phase.";
+          list.append(empty);
+          return;
+        }
+        tasks.forEach(task => {
+          const row = document.createElement("div");
+          row.className = "task-row";
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "metro-task cursor-interaction";
+          button.dataset.status = shownStatus(task);
+          button.setAttribute("aria-pressed", task.id === selectedTaskId ? "true" : "false");
+          button.setAttribute("aria-label", `Select ${task.id}: ${task.title}; ${label(shownStatus(task))}`);
+          button.dataset.tooltip = `${task.title} · ${label(shownStatus(task))}`;
+          button.textContent = task.id;
+          const copy = document.createElement("div");
+          copy.className = "task-copy";
+          const title = document.createElement("div");
+          title.textContent = task.title;
+          const meta = document.createElement("div");
+          meta.className = "task-list-meta metro-small";
+          const status = document.createElement("span");
+          status.textContent = label(shownStatus(task));
+          const kind = document.createElement("span");
+          kind.textContent = label(task.kind);
+          meta.append(status, kind);
+          for (const tag of task.tags || []) {
+            meta.append(tagChip(tag));
+          }
+          copy.append(title, meta);
+          button.addEventListener("click", () => {
+            selectedTaskId = task.id;
+            render();
+            saveState();
+          });
+          row.append(button, copy);
+          list.append(row);
+        });
+      };
+
+      const selectFlowTask = id => {
+        selectedTaskId = id;
+        selectedPhaseId = byId.get(id).phase;
+        render();
+        saveState();
+        query(`[data-flow-current] button`)?.focus({ preventScroll: true });
+      };
+      const drawEdges = () => {
+        const edges = query("[data-flow-edges]");
+        edges.replaceChildren();
+        if (viewMode !== "flow") return;
+        const layout = query("[data-flow-layout]").getBoundingClientRect();
+        const center = query("[data-flow-current] button");
+        if (!center || !layout.width) return;
+        const vertical = getComputedStyle(query("[data-flow-layout]")).gridTemplateColumns.split(" ").length === 1;
+        const connect = (from, to) => {
+          const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
+          const x1 = (vertical ? a.x + a.width / 2 : a.right) - layout.x;
+          const y1 = (vertical ? a.bottom : a.y + a.height / 2) - layout.y;
+          const x2 = (vertical ? b.x + b.width / 2 : b.x) - layout.x;
+          const y2 = (vertical ? b.y : b.y + b.height / 2) - layout.y;
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          // On narrow screens route beside stacked siblings, never through their tiles.
+          const d = vertical
+            ? `M ${x1} ${y1} v 8 H 4 V ${y2 - 12} H ${x2} V ${y2 - 3}`
+            : `M ${x1} ${y1} C ${(x1+x2)/2} ${y1}, ${(x1+x2)/2} ${y2}, ${x2-3} ${y2}`;
+          path.setAttribute("d", d);
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke", "var(--ci-line-strong)");
+          path.setAttribute("stroke-width", "1.5");
+          path.setAttribute("marker-end", "url(#board-flow-arrow)");
+          edges.append(path);
+        };
+        all("[data-flow-before] button").forEach(node => connect(node, center));
+        all("[data-flow-after] button").forEach(node => connect(center, node));
+      };
+      const renderFlow = () => {
+        const task = byId.get(selectedTaskId);
+        const groups = [task?.depends_on.map(id => byId.get(id)) || [], task ? [task] : [],
+          board.tasks.filter(item => item.depends_on.includes(selectedTaskId))];
+        ["before", "current", "after"].forEach((side, index) => {
+          const column = query(`[data-flow-${side}]`);
+          column.replaceChildren();
+          groups[index].forEach(item => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "flow-node cursor-interaction";
+            button.dataset.status = shownStatus(item);
+            button.setAttribute("aria-pressed", String(item.id === selectedTaskId));
+            [item.id, item.title, `${item.phase} · ${label(shownStatus(item))}`].forEach(text => {
+              const line = document.createElement("span");
+              line.textContent = text;
+              button.append(line);
+            });
+            const tags = document.createElement("span");
+            tags.className = "task-tags";
+            tags.append(...(item.tags || []).map(tagChip));
+            button.append(tags);
+            button.addEventListener("click", () => selectFlowTask(item.id));
+            column.append(button);
+          });
+          if (!groups[index].length) column.textContent = index === 0 ? "No prerequisites" : "No dependent tasks";
+        });
+        requestAnimationFrame(drawEdges);
+      };
+      const renderDetail = () => {
+        const task = byId.get(selectedTaskId);
+        const detail = query("[data-detail]");
+        detail.hidden = !task;
+        if (!task) return;
+        query("[data-task-title]").textContent = `${task.id} · ${task.title}`;
+        query("[data-task-status]").textContent = label(shownStatus(task));
+        query("[data-task-kind]").textContent = `Kind: ${label(task.kind)}`;
+        query("[data-task-owner]").textContent = `Owner: ${task.owner}`;
+        query("[data-task-role]").textContent = `Role: ${task.model_role}`;
+        query("[data-task-tags]").replaceChildren(...(task.tags || []).map(tagChip));
+        fillList(query("[data-acceptance]"), task.acceptance, "No acceptance criteria recorded.");
+        fillList(query("[data-validation]"), task.validation, "No validation recorded.");
+        fillList(query("[data-evidence]"), task.evidence, "No evidence recorded yet.");
+        fillList(query("[data-scope]"), task.scope, "No scope recorded.");
+        query("[data-blocked-section]").hidden = !task.blocked_reason;
+        query("[data-blocked-reason]").textContent = task.blocked_reason;
+        query("[data-review-section]").hidden = !task.review;
+        query("[data-review]").textContent = task.review;
+        query("[data-notes-section]").hidden = !task.notes;
+        query("[data-notes]").textContent = task.notes;
+        const deps = task.depends_on.map(id => {
+          const dependency = byId.get(id);
+          return dependency ? `${id} · ${dependency.title} (${label(shownStatus(dependency))})` : id;
+        });
+        fillList(query("[data-dependencies]"), deps, "No dependencies.");
+        const action = query("[data-request-work]");
+        action.textContent = "Copy task brief";
+        const brief = query("[data-task-brief]");
+        brief.hidden = true;
+        brief.value = taskPrompt(task);
+        query("[data-action-note]").textContent = "Read-only snapshot · task changes belong in the ledger.";
+      };
+
+      const render = () => {
+        root.classList.toggle('is-worktree', viewMode === 'worktree');
+        query('[data-worktree]').hidden = viewMode !== 'worktree';
+        query("[data-flow]").hidden = viewMode !== "flow";
+        query("[data-list-panel]").hidden = viewMode !== "list";
+        query("[data-workspace]").style.gridTemplateColumns = viewMode === "flow" ? "1fr" : "";
+        all("[data-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.view === viewMode)));
+        renderPhases();
+        renderTasks();
+        renderFlow();
+        renderDetail();
+        taskMap?.show(selectedTaskId);
+      };
+      all("[data-view]").forEach(button => button.addEventListener("click", () => {
+        viewMode = button.dataset.view;
+        try {
+          const url = new URL(location.href);
+          url.searchParams.set('view', viewMode);
+          history.replaceState(null, '', url);
+        } catch {}
+        render();
+        saveState();
+      }));
+      new ResizeObserver(drawEdges).observe(query("[data-flow-layout]"));
+
+      function taskPrompt(task) {
+        return [
+          `Project: ${board.milestone.title} (${board.milestone.id})`,
+          `Task: ${task.id} · ${task.title}`,
+          `Snapshot: ${board.milestone.updated_at} · ${shownStatus(task)}`,
+          `Owner: ${task.owner}`,
+          `Dependencies: ${task.depends_on.join(", ") || "None"}`,
+          "Scope:", ...task.scope.map(item => `- ${item}`),
+          "Acceptance:", ...task.acceptance.map(item => `- ${item}`),
+          "Re-read the authoritative ledger and applicable project instructions before acting.",
+          "This brief is context only; copying it does not authorize or start work."
+        ].join("\n");
+      }
+      query("[data-request-work]").addEventListener("click", async () => {
+        const brief = query("[data-task-brief]");
+        const text = brief.value;
+        try {
+          await navigator.clipboard.writeText(text);
+          query("[data-action-note]").textContent = "Task brief copied.";
+        } catch {
+          brief.hidden = false;
+          brief.focus();
+          brief.select();
+          query("[data-action-note]").textContent = "Copy the selected brief with Ctrl+C or Command+C.";
+        }
+      });
+
+      window.addEventListener("openai:set_globals", event => {
+        const state = event.detail?.globals?.widgetState?.privateContent;
+        if (!state || typeof state !== "object") return;
+        if (["flow", "list", "worktree"].includes(state.viewMode)) viewMode = state.viewMode;
+        taskMap?.restore(state.camera);
+        ({selectedTaskId, selectedPhaseId} = selectionFor(state));
+        render();
+      });
+
+      taskMap = createBoardCanvas({root, board, shownStatus, tagChip, saved: saved.camera, save: saveState,
+        selectTask: id => { selectedTaskId = id; selectedPhaseId = byId.get(id).phase; render(); saveState(); }});
+      const statusTokens = {done: 'success', active: 'warning', ready: 'info', review: 'info',
+        blocked: 'danger', planned: 'line-strong', deferred: 'muted'};
+      for (const [status, token] of Object.entries(statusTokens)) {
+        const item = document.createElement('span');
+        item.textContent = status;
+        item.style.setProperty('--status-color', `var(--ci-${token})`);
+        query('[data-map-legend]').append(item);
+      }
+      render();
+    })();
+  </script>
+</section>

@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="en" data-ci="signal-inspector">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Example project · Task Dashboard</title>
+<style>body{margin:0;background:var(--ci-bg);color:var(--ci-text);font-family:var(--ci-font)}.live-state{margin:0;padding:8px;font-size:12px;background:var(--ci-panel)}</style>
+</head>
+<body>
+<section id="task-dashboard" aria-label="Milestone task board" data-ci="signal-inspector">
+  <style>
+    /* Shared dashboard theme. Derived from the owner-approved Signal Inspector style. */
+[data-ci="signal-inspector"] {
+  color-scheme: dark;
+  --ci-bg: #171d22;
+  --ci-canvas: #151c21;
+  --ci-scope-bg: #000000;
+  --ci-scope-trace: #ffffff;
+  --ci-panel: #20282e;
+  --ci-panel-raised: #2b343c;
+  --ci-panel-hover: #3b4853;
+  --ci-explorer: #1c242a;
+  --ci-tree-category: #303a42;
+  --ci-tree-child: #273139;
+  --ci-tree-deep: #222b32;
+  --ci-tree-leaf: #1e272d;
+  --ci-tree-border: #34414a;
+  --ci-line: #46545f;
+  --ci-line-strong: #8a9dac;
+  --ci-line-soft: #394750;
+  --ci-text: #e8edf2;
+  --ci-on-accent: #ffffff;
+  --ci-muted: #a9b5bf;
+  --ci-accent: #075fc8;
+  --ci-accent-hover: #1676df;
+  --ci-accent-soft: #173653;
+  --ci-focus: #96ccff;
+  --ci-success: #86dfa2;
+  --ci-success-soft: #183225;
+  --ci-warning: #ffe391;
+  --ci-warning-soft: #392f19;
+  --ci-danger: #ffb9c0;
+  --ci-danger-soft: #391d24;
+  --ci-info: #96ccff;
+  --ci-info-soft: #173653;
+  --ci-pgm: #a91d2b;
+  --ci-pvw: #087337;
+  --ci-aux: #0063c7;
+  --ci-cut: #fff100;
+  --ci-on-cut: #111111;
+  --ci-backdrop: #080b0ed9;
+  --ci-font: "Segoe UI", Arial, sans-serif;
+  --ci-mono: ui-monospace, Consolas, monospace;
+  --ci-type-small: 11px;
+  --ci-type-label: 12px;
+  --ci-type-body: 12px;
+  --ci-type-section: 13px;
+  --ci-type-title: 16px;
+  --ci-type-meter: 48px;
+  --ci-type-meter-small: 24px;
+  --ci-type-meter-compact: 32px;
+  --ci-radius: 0;
+  --ci-space-1: 4px;
+  --ci-space-2: 6px;
+  --ci-space-3: 8px;
+  --ci-space-4: 10px;
+  --ci-space-5: 12px;
+  --ci-explorer-width: 208px;
+  --ci-control: 26px;
+  --ci-source-key: 39px;
+}
+
+        #task-dashboard { color: var(--ci-text); background: var(--ci-bg); width: 100%; padding: 8px; box-sizing: border-box; font: var(--ci-type-body)/1.4 var(--ci-font); }
+    #task-dashboard * { box-sizing: border-box; }
+    #task-dashboard [hidden] { display: none !important; }
+    #task-dashboard h1 { font-size: var(--ci-type-title); font-weight: 600; line-height: 1.15; margin: 0 0 12px; }
+    #task-dashboard h2 { font-size: var(--ci-type-title); font-weight: 600; }
+    #task-dashboard h3 { font-size: var(--ci-type-section); font-weight: 600; }
+    #task-dashboard button { font: inherit; color: inherit; border: 1px solid var(--ci-line); border-radius: var(--ci-radius); text-align: left; padding: 6px; background: var(--ci-panel-raised); min-height: 28px; }
+    #task-dashboard button:hover { filter: brightness(1.18); }
+    #task-dashboard button[aria-pressed="true"] { outline: 2px solid var(--ci-focus); outline-offset: -2px; }
+    #task-dashboard button:disabled { opacity: .55; }
+    #task-dashboard .metro-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 6px; margin: 8px 0; }
+    #task-dashboard .metro-stat { display: grid; padding: 16px; background: var(--ci-accent); }
+    #task-dashboard .metro-stat:nth-child(2) { background: var(--ci-panel-raised); }
+    #task-dashboard .metro-value { font-size: var(--ci-type-meter-small); font-weight: 400; }
+    #task-dashboard .metro-small { font-size: var(--ci-type-small); }
+    #task-dashboard .metro-muted { color: var(--ci-muted); }
+    #task-dashboard .metro-phase { background: var(--ci-panel); min-height: 78px; display: grid; gap: 8px; align-content: space-between; }
+    #task-dashboard .metro-progress { height: 4px; background: var(--ci-line); }
+    #task-dashboard .metro-bar { height: 100%; background: var(--ci-text); }
+    #task-dashboard .metro-detail { background: var(--ci-panel); padding: 8px; overflow-wrap: anywhere; }
+    #task-dashboard .metro-badge { background: var(--ci-accent); padding: 4px 10px; }
+    #task-dashboard .task-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-block: 6px; }
+    #task-dashboard .task-tag { --tag-color: var(--ci-muted); display: inline-block; padding: 2px 6px; border: 1px solid var(--tag-color); border-radius: var(--ci-radius); background: color-mix(in srgb, var(--tag-color) 12%, var(--ci-panel)); color: var(--tag-color); font-size: var(--ci-type-small); line-height: 1.4; max-width: 100%; overflow-wrap: anywhere; }
+    #task-dashboard .metro-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    #task-dashboard .metro-primary { background: var(--ci-accent); }
+    #task-dashboard .metro-task-link { display: inline-block; padding: 6px; min-height: 28px; color: var(--ci-text); text-decoration: none; }
+    #task-dashboard .metro-task-link:hover { filter: brightness(1.18); }
+    #task-dashboard .view-controls { display: flex; gap: 6px; margin: 8px 0; }
+    #task-dashboard .flow-layout { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 40px; position: relative; margin: 20px 0 28px; }
+    #task-dashboard .flow-column { display: grid; gap: 12px; align-content: center; min-width: 0; }
+    #task-dashboard .flow-node { display: grid; gap: 6px; position: relative; z-index: 1; overflow-wrap: anywhere; background: var(--ci-panel); width: 100%; }
+    #task-dashboard button[data-status="done"] { background: var(--ci-success-soft); }
+    #task-dashboard button[data-status="ready"] { background: var(--ci-accent); }
+    #task-dashboard button[data-status="blocked"] { background: var(--ci-danger-soft); }
+    #task-dashboard button[data-status="active"] { background: var(--ci-warning-soft); }
+    #task-dashboard button[data-status="review"] { background: var(--ci-info-soft); }
+    #task-dashboard button[data-status="planned"] { background: var(--ci-panel); }
+    #task-dashboard button[data-status="deferred"] { background: var(--ci-panel-raised); }
+    #task-dashboard .flow-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+    #task-dashboard .board-header { background: var(--ci-accent); padding: 8px; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding-inline-end: 6rem; }
+    #task-dashboard .board-header p { color: var(--ci-text); }
+    #task-dashboard :focus-visible { outline: 2px solid var(--ci-focus); outline-offset: -2px; }
+    #task-dashboard .board-header > div { min-width: 0; }
+    #task-dashboard .board-header p { margin: .25rem 0 0; }
+    #task-dashboard .board-workspace { display: grid; grid-template-columns: minmax(13rem, .75fr) minmax(0, 1.5fr); gap: 1.25rem; align-items: start; }
+    #task-dashboard .task-list { display: grid; gap: .25rem; }
+    #task-dashboard .task-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .75rem; align-items: start; min-width: 0; }
+    #task-dashboard .task-copy { min-width: 0; overflow-wrap: anywhere; }
+    #task-dashboard .task-list-meta { display: flex; flex-wrap: wrap; gap: .25rem .75rem; margin-top: .25rem; }
+    #task-dashboard .detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    #task-dashboard .detail-head h2 { margin: 0; }
+    #task-dashboard .detail-meta { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-block: .5rem 1rem; }
+    #task-dashboard .detail-section { margin-block: 1rem; }
+    #task-dashboard .detail-section h3 { margin-bottom: .35rem; }
+    #task-dashboard .detail-section ul { margin-block: .25rem 0; padding-inline-start: 1.25rem; }
+    #task-dashboard .detail-section li + li { margin-top: .25rem; }
+    #task-dashboard .action-row { align-items: center; margin-top: 1rem; }
+    #task-dashboard .action-note { margin: 0; }
+    #task-dashboard .empty { padding-block: 1rem; }
+    @media (max-width: 620px) {
+      #task-dashboard { padding: 16px; }
+      #task-dashboard .flow-layout { grid-template-columns: 1fr; gap: 44px; }
+      #task-dashboard .flow-column { padding-inline: 16px; }
+      #task-dashboard .board-header { background: var(--ci-accent); padding: 8px; display: block; padding-inline-end: 0; }
+      #task-dashboard .board-workspace { grid-template-columns: 1fr; }
+      #task-dashboard .detail-head { display: block; }
+    }
+#task-dashboard [data-task-brief] { width: 100%; min-height: 180px; background: var(--ci-bg); color: var(--ci-text); border: 1px solid var(--ci-line); padding: 8px; font: inherit; }
+
+#task-dashboard .view-controls { flex-wrap: wrap; }
+#task-dashboard .view-controls button[aria-pressed="true"] { background: var(--ci-accent); }
+#task-dashboard.is-worktree > .metro-grid { display: none; }
+#task-dashboard.is-worktree .board-workspace { grid-template-columns: minmax(0, 1fr) 310px; gap: 6px; }
+#task-dashboard.is-worktree .metro-detail { max-height: 76vh; overflow: auto; }
+#task-dashboard.is-worktree .metro-badge { flex-shrink: 0; white-space: nowrap; }
+#task-dashboard .map-panel { min-width: 0; position: relative; }
+#task-dashboard .map-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px; background: var(--ci-panel); }
+#task-dashboard .map-toolbar button { text-align: center; min-width: 32px; touch-action: manipulation; }
+#task-dashboard .map-toolbar output { padding: 4px; min-width: 54px; text-align: center; font-variant-numeric: tabular-nums; background: var(--ci-bg); border: 1px solid var(--ci-line); }
+#task-dashboard .map-count { margin-inline-end: auto; color: var(--ci-muted); }
+#task-dashboard .map-viewport { height: 66vh; min-height: 410px; position: relative; overflow: hidden; touch-action: none; cursor: grab; background: var(--ci-canvas); border: 1px solid var(--ci-line); }
+#task-dashboard .map-viewport.is-panning { cursor: grabbing; }
+#task-dashboard .map-world { position: absolute; inset: 0 auto auto 0; transform-origin: 0 0; }
+#task-dashboard .map-edges { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+#task-dashboard .map-edge-clearance { stroke: var(--ci-canvas); stroke-width: 6; fill: none; stroke-linejoin: round; }
+#task-dashboard .map-edge { stroke: var(--ci-line-strong); stroke-width: 1; fill: none; opacity: .3; }
+#task-dashboard .map-edge.is-related { stroke: var(--ci-focus); stroke-width: 2; opacity: 1; }
+#task-dashboard .map-node { position: absolute; display: flex; flex-direction: column; gap: 6px; padding: 9px; border-left: 4px solid var(--ci-line-strong); cursor: pointer; user-select: none; }
+#task-dashboard .map-node[data-status="done"] { border-left-color: var(--ci-success); }
+#task-dashboard .map-node[data-status="active"] { border-left-color: var(--ci-warning); }
+#task-dashboard .map-node[data-status="blocked"] { border-left-color: var(--ci-danger); }
+#task-dashboard .map-node[data-status="ready"], #task-dashboard .map-node[data-status="review"] { border-left-color: var(--ci-info); }
+#task-dashboard .map-node.is-related { border-top-color: var(--ci-focus); border-right-color: var(--ci-focus); border-bottom-color: var(--ci-focus); }
+#task-dashboard .map-node-head { display: flex; justify-content: space-between; gap: 6px; width: 100%; font-variant-numeric: tabular-nums; }
+#task-dashboard .map-node-title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-align: left; }
+#task-dashboard .map-node .task-tags { margin: 0; flex-shrink: 0; }
+#task-dashboard .map-tag-measure { position: absolute; visibility: hidden; width: 226px; margin: 0; pointer-events: none; }
+#task-dashboard .map-footer { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 6px; background: var(--ci-panel); }
+#task-dashboard .map-legend { display: flex; gap: 8px; flex-wrap: wrap; }
+#task-dashboard .map-legend span::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 4px; background: var(--status-color); }
+#task-dashboard .map-minimap { flex: 1 1 180px; max-width: 240px; height: 56px; background: var(--ci-panel); border: 1px solid var(--ci-line-strong); cursor: crosshair; touch-action: none; }
+#task-dashboard .map-minimap rect { fill: var(--ci-line-strong); }
+#task-dashboard .map-minimap [data-mini-view] { fill: var(--ci-accent-soft); fill-opacity: .45; stroke: var(--ci-focus); stroke-width: 12px; pointer-events: none; }
+#task-dashboard .map-help { padding: 8px; background: var(--ci-panel-raised); border: 1px solid var(--ci-line); }
+#task-dashboard .map-help p { margin: 4px 0; }
+#task-dashboard .map-help kbd { font-family: var(--ci-mono); }
+#task-dashboard .map-tooltip { position: absolute; z-index: 5; left: 8px; bottom: 36px; max-width: min(400px, calc(100% - 16px)); padding: 8px; pointer-events: none; background: var(--ci-panel-raised); border: 1px solid var(--ci-focus); }
+#task-dashboard .map-panel.is-expanded { position: fixed; inset: 8px; z-index: 1000; background: var(--ci-bg); display: flex; flex-direction: column; }
+#task-dashboard .map-panel.is-expanded .map-viewport { flex: 1; min-height: 0; }
+@media (max-width: 1100px) {
+  #task-dashboard.is-worktree .board-workspace { grid-template-columns: 1fr; }
+  #task-dashboard.is-worktree .metro-detail { max-height: none; }
+}
+@media (max-width: 620px) {
+  #task-dashboard .map-viewport { min-height: 340px; height: 60vh; }
+  #task-dashboard .map-count { width: 100%; }
+}
+@media (pointer: coarse) {
+  #task-dashboard .map-toolbar button { min-height: 44px; min-width: 44px; }
+}
+
+  </style>
+
+  <div class="board-header">
+    <div>
+      <h1 data-board-title></h1>
+      <p class="metro-muted metro-small" data-board-meta></p>
+    </div>
+    <p class="metro-muted metro-small" data-baseline></p>
+  </div>
+
+  <div class="metro-grid" aria-label="Current task counts">
+    <div class="metro-stat">
+      <span class="metro-muted">Planning and decisions</span>
+      <span class="metro-value tabular-nums" data-planning-count></span>
+      <span class="metro-small" data-planning-state></span>
+    </div>
+    <div class="metro-stat">
+      <span class="metro-muted">Implementation and qualification</span>
+      <span class="metro-value tabular-nums" data-product-count></span>
+      <span class="metro-small" data-product-state></span>
+    </div>
+  </div>
+
+  <div class="metro-grid" data-phase-grid aria-label="Select a phase"></div>
+
+  <div class="view-controls" role="group" aria-label="Board view">
+    <button type="button" class="cursor-interaction" data-view="worktree">Worktree</button>
+    <button type="button" class="cursor-interaction" data-view="flow">Flowchart</button>
+    <button type="button" class="cursor-interaction" data-view="list">Task list</button>
+  </div>
+  <section data-flow aria-label="Selected task dependency flowchart">
+    <h2>Task dependencies</h2>
+    <p class="metro-small metro-muted">Prerequisites → selected task → dependent tasks. Select a tile to follow its connections.</p>
+    <div class="flow-layout" data-flow-layout>
+      <svg class="flow-lines" aria-hidden="true"><defs><marker id="board-flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ci-line-strong)" /></marker></defs><g data-flow-edges></g></svg>
+      <div class="flow-column" data-flow-before aria-label="Prerequisites"></div>
+      <div class="flow-column" data-flow-current aria-label="Selected task"></div>
+      <div class="flow-column" data-flow-after aria-label="Dependent tasks"></div>
+    </div>
+  </section>
+  <div class="board-workspace" data-workspace>
+    <section class="map-panel" data-worktree aria-label="Worktree: all task dependencies" hidden>
+      <div class="map-toolbar" role="group" aria-label="Canvas controls">
+        <span class="map-count" data-map-count></span>
+        <button type="button" data-map-action="out" aria-label="Zoom out">−</button>
+        <output data-map-zoom aria-label="Zoom level">100%</output>
+        <button type="button" data-map-action="in" aria-label="Zoom in">+</button>
+        <button type="button" data-map-action="fit">Fit all</button>
+        <button type="button" data-map-action="reset" aria-label="Reset zoom to 100 percent">1:1</button>
+        <button type="button" data-map-action="selected">Centre selected</button>
+        <button type="button" data-map-action="expand" aria-pressed="false">Expand</button>
+        <button type="button" data-map-action="help" aria-expanded="false" aria-controls="board-map-help">Help</button>
+      </div>
+      <div class="map-help" id="board-map-help" data-map-help hidden>
+        <p>Dependencies run left to right; parallel tasks share a column. Drag to pan. Scroll or pinch to zoom. Select a task for its full details and highlighted connections.</p>
+        <p><kbd>Arrow keys</kbd> pan · <kbd>+</kbd> / <kbd>−</kbd> zoom · <kbd>0</kbd> fit all · <kbd>1</kbd> actual size · <kbd>F</kbd> centre selected · <kbd>Esc</kbd> close help / restore.</p>
+        <p>Click the overview to move across the canvas. All interactions change this view only.</p>
+      </div>
+      <div class="map-viewport" data-map-viewport tabindex="0" role="region" aria-label="Task canvas. Arrow keys pan, plus and minus zoom, zero fits all." aria-describedby="board-map-help">
+        <div class="map-world" data-map-world>
+          <svg class="map-edges" width="100%" height="100%" aria-hidden="true"><defs><marker id="board-map-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ci-line-strong)" /></marker><marker id="board-map-selected-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ci-focus)" /></marker></defs><g data-map-edges></g></svg>
+        </div>
+      </div>
+      <div class="map-footer">
+        <span class="map-legend" data-map-legend></span>
+        <span class="metro-muted">Dependency order: prerequisite → dependent</span>
+        <svg class="map-minimap" data-minimap role="img" aria-label="Overview of all tasks and the current viewport"><rect data-mini-view /></svg>
+      </div>
+      <div class="map-tooltip" id="board-map-tooltip" role="tooltip" data-map-tooltip hidden></div>
+    </section>
+    <section aria-labelledby="phase-task-heading" data-list-panel>
+      <h2 id="phase-task-heading" data-phase-title></h2>
+      <p class="metro-muted metro-small" data-phase-gate></p>
+      <div class="task-list" data-task-list></div>
+    </section>
+
+    <section class="metro-detail" aria-live="polite" data-detail>
+      <div class="detail-head">
+        <h2 data-task-title></h2>
+        <span class="metro-badge" data-task-status></span>
+      </div>
+      <div class="detail-meta metro-small">
+        <span data-task-kind></span>
+        <span data-task-owner></span>
+        <span data-task-role></span>
+      </div>
+      <div class="task-tags" data-task-tags aria-label="Task categories"></div>
+      <div class="detail-section">
+        <h3>Acceptance</h3>
+        <ul data-acceptance></ul>
+      </div>
+      <div class="detail-section">
+        <h3>Dependencies</h3>
+        <ul data-dependencies></ul>
+      </div>
+      <div class="detail-section">
+        <h3>Validation</h3>
+        <ul data-validation></ul>
+      </div>
+      <div class="detail-section">
+        <h3>Evidence</h3>
+        <ul data-evidence></ul>
+      </div>
+      <details data-task-context>
+        <summary>Task context</summary>
+        <div class="detail-section">
+          <h3>Scope</h3>
+          <ul data-scope></ul>
+        </div>
+        <div class="detail-section" data-blocked-section>
+          <h3>Blocked reason</h3>
+          <p data-blocked-reason></p>
+        </div>
+        <div class="detail-section" data-review-section>
+          <h3>Review</h3>
+          <p data-review></p>
+        </div>
+        <div class="detail-section" data-notes-section>
+          <h3>Notes</h3>
+          <p data-notes></p>
+        </div>
+      </details>
+      <div class="metro-actions action-row">
+        <button type="button" class="metro-primary cursor-interaction" data-request-work>Copy task brief</button>
+        <p class="metro-muted metro-small action-note" data-action-note role="status"></p>
+        <textarea data-task-brief aria-label="Task brief to copy" readonly hidden></textarea>
+      </div>
+    </section>
+  </div>
+
+  <script type="application/json" id="task-dashboard-data">{"schema_version":1,"milestone":{"id":"example-project","title":"Example project","updated_at":"2026-10-17T12:00:00+00:00","baseline_status":"Sample data · seven tasks illustrating the available states"},"phases":[{"id":"P0","title":"Plan","outcome":"Agree on the scope","gate":"Scope review"},{"id":"P1","title":"Build","outcome":"Deliver a usable first version","gate":"Implementation review"},{"id":"P2","title":"Release","outcome":"Verify and document the release","gate":"Release decision"}],"tasks":[{"id":"TASK-001","title":"Define the project scope","phase":"P0","kind":"planning","status":"done","depends_on":[],"scope":["Synthetic example only"],"acceptance":["Replace this criterion with a concrete outcome."],"validation":["passed: fictional example for demonstrating the done state"],"model_role":"Project contributor","owner":"Example owner","evidence":["Synthetic example; no real project work is claimed."],"review":"Fictional review for the sample board.","blocked_reason":"","notes":"Sample data. Initialize a fresh ledger for your own project.","tags":["Example"]},{"id":"TASK-002","title":"Choose the first release features","phase":"P0","kind":"decision","status":"planned","depends_on":["TASK-001"],"scope":["Synthetic example only"],"acceptance":["Replace this criterion with a concrete outcome."],"validation":[],"model_role":"Project contributor","owner":"Example owner","evidence":[],"review":"","blocked_reason":"","notes":"Sample data. Initialize a fresh ledger for your own project.","tags":["Example"]},{"id":"TASK-003","title":"Build the core workflow","phase":"P1","kind":"implementation","status":"active","depends_on":["TASK-001"],"scope":["Synthetic example only"],"acceptance":["Replace this criterion with a concrete outcome."],"validation":[],"model_role":"Project contributor","owner":"Example owner","evidence":[],"review":"","blocked_reason":"","notes":"Sample data. Initialize a fresh ledger for your own project.","tags":["Example"]},{"id":"TASK-004","title":"Review the quick-start guide","phase":"P1","kind":"implementation","status":"review","depends_on":["TASK-001"],"scope":["Synthetic example only"],"acceptance":["Replace this criterion with a concrete outcome."],"validation":[],"model_role":"Project contributor","owner":"Example owner","evidence":[],"review":"","blocked_reason":"","notes":"Sample data. Initialize a fresh ledger for your own project.","tags":["Example"]},{"id":"TASK-005","title":"Connect the example data source","phase":"P1","kind":"implementation","status":"blocked","depends_on":["TASK-001"],"scope":["Synthetic example only"],"acceptance":["Replace this criterion with a concrete outcome."],"validation":[],"model_role":"Project contributor","owner":"Example owner","evidence":[],"review":"","blocked_reason":"Waiting for example access details.","notes":"Sample data. Initialize a fresh ledger for your own project.","tags":["Example"]},{"id":"TASK-006","title":"Verify the release candidate","phase":"P2","kind":"qualification","status":"planned","depends_on":["TASK-003","TASK-004","TASK-005"],"scope":["Synthetic example only"],"acceptance":["Replace this criterion with a concrete outcome."],"validation":[],"model_role":"Project contributor","owner":"Example owner","evidence":[],"review":"","blocked_reason":"","notes":"Sample data. Initialize a fresh ledger for your own project.","tags":["Example"]},{"id":"TASK-007","title":"Explore a future extension","phase":"P2","kind":"planning","status":"deferred","depends_on":[],"scope":["Synthetic example only"],"acceptance":["Replace this criterion with a concrete outcome."],"validation":[],"model_role":"Project contributor","owner":"Example owner","evidence":[],"review":"","blocked_reason":"","notes":"Sample data. Initialize a fresh ledger for your own project.","tags":["Example"]}]}</script>
+  <script>
+    (() => {
+      /* Read-only layout: dependency depth runs left to right, independent of phase. */
+function buildBoardGraph(board, minimumHeight = 108) {
+  const width = 248, inset = 48, portStep = 14, trackStep = 14;
+  const stagger = [0, 49, 98, 49], staggerHeight = Math.max(...stagger);
+  const byId = new Map(board.tasks.map(task => [task.id, task]));
+  const ranks = new Map();
+  const rank = id => {
+    if (!ranks.has(id)) {
+      ranks.set(id, 0);
+      ranks.set(id, Math.max(0, ...byId.get(id).depends_on.map(dep => rank(dep) + 1)));
+    }
+    return ranks.get(id);
+  };
+  board.tasks.forEach(task => rank(task.id));
+  const levels = Array.from({length: Math.max(-1, ...ranks.values()) + 1}, () => []);
+  board.tasks.forEach(task => levels[ranks.get(task.id)].push(task));
+  levels.forEach(tasks => tasks.sort((a, b) => a.id.localeCompare(b.id)));
+  const rows = Math.max(1, ...levels.map(tasks => tasks.length));
+  const slots = new Map(), dependents = new Map(board.tasks.map(task => [task.id, []]));
+  board.tasks.forEach(task => task.depends_on.forEach(id => dependents.get(id).push(task.id)));
+  const assignSlots = tasks => tasks.forEach((task, index) =>
+    slots.set(task.id, Math.floor((rows - tasks.length) / 2) + index));
+  levels.forEach(assignSlots);
+  // Stable neighbour ordering keeps parallel branches near their connections.
+  for (let pass = 0; pass < 4; pass++) {
+    const forward = pass % 2 === 0;
+    for (const tasks of forward ? levels : [...levels].reverse()) {
+      const score = task => {
+        const neighbours = forward ? task.depends_on : dependents.get(task.id);
+        return neighbours.length ? neighbours.reduce((sum, id) => sum + slots.get(id), 0)
+          / neighbours.length : slots.get(task.id);
+      };
+      tasks.sort((a, b) => score(a) - score(b) || a.id.localeCompare(b.id));
+      assignSlots(tasks);
+    }
+  }
+  const tasks = [...board.tasks].sort((a, b) => a.id.localeCompare(b.id));
+  const edges = tasks.flatMap(task => [...task.depends_on].sort().map(from => ({from, to: task.id})));
+  const incoming = new Map(tasks.map(task => [task.id, []]));
+  const outgoing = new Map(tasks.map(task => [task.id, []]));
+  const gutters = levels.map(() => ({departures: [], adjacent: [], arrivals: []}));
+  const bands = Array.from({length: rows}, () => []);
+  const key = edge => JSON.stringify([edge.from, edge.to]);
+  for (const edge of edges) {
+    incoming.get(edge.to).push(edge);
+    outgoing.get(edge.from).push(edge);
+    const start = ranks.get(edge.from), end = ranks.get(edge.to);
+    if (end === start + 1) gutters[start].adjacent.push(edge);
+    else {
+      gutters[start].departures.push(edge);
+      gutters[end - 1].arrivals.push(edge);
+      edge.band = Math.min(slots.get(edge.from), slots.get(edge.to));
+      bands[edge.band].push(edge);
+    }
+  }
+  const degree = Math.max(1, ...tasks.map(task => Math.max(
+    incoming.get(task.id).length, outgoing.get(task.id).length)));
+  const height = Math.max(minimumHeight, (degree - 1) * portStep + 28);
+  const portSlots = Math.floor((height - 28) / portStep) + 1;
+  const columnX = [inset], rail = new Map();
+  for (let level = 0; level < levels.length; level++) {
+    const gutter = gutters[level];
+    // Each vertical segment owns a rail, including short adjacent links.
+    const routes = [...gutter.departures, ...gutter.adjacent, ...gutter.arrivals];
+    routes.forEach((edge, index) => rail.set(`${level}:${key(edge)}`,
+      columnX[level] + width + 32 + index * trackStep));
+    columnX.push(columnX[level] + width + Math.max(144, 64 + routes.length * trackStep));
+  }
+  const port = (links, endpoint) => {
+    for (const list of links.values()) {
+      const other = endpoint === 'from' ? 'to' : 'from';
+      list.sort((a, b) => slots.get(a[other]) - slots.get(b[other])
+        || ranks.get(a[other]) - ranks.get(b[other]) || key(a).localeCompare(key(b)));
+      list.forEach((edge, index) => {
+        edge[`${endpoint}Offset`] = 14 + (Math.round((portSlots - list.length) / 2) + index) * portStep;
+      });
+    }
+  };
+  port(outgoing, 'from');
+  port(incoming, 'to');
+  const bandHeights = bands.map(links => {
+    const ends = [];
+    links.sort((a, b) => ranks.get(a.from) - ranks.get(b.from)
+      || ranks.get(a.to) - ranks.get(b.to) || key(a).localeCompare(key(b)));
+    for (const edge of links) {
+      const start = ranks.get(edge.from), end = ranks.get(edge.to);
+      const left = rail.get(`${start}:${key(edge)}`), right = rail.get(`${end - 1}:${key(edge)}`);
+      let track = ends.findIndex(value => value + trackStep < left);
+      if (track < 0) track = ends.length;
+      ends[track] = right;
+      edge.track = track;
+    }
+    return Math.max(96, 64 + ends.length * trackStep);
+  });
+  const rowY = [inset];
+  bandHeights.forEach(gap => rowY.push(rowY.at(-1) + height + staggerHeight + gap));
+  const nodes = new Map();
+  levels.forEach((items, level) => items.forEach(task => nodes.set(task.id, {
+    task, x: columnX[level], y: rowY[slots.get(task.id)] + stagger[level % stagger.length],
+    width, height, level, slot: slots.get(task.id)
+  })));
+  for (const edge of edges) {
+    const from = nodes.get(edge.from), to = nodes.get(edge.to);
+    const x1 = from.x + width, y1 = from.y + edge.fromOffset;
+    const x2 = to.x, y2 = to.y + edge.toOffset;
+    const exit = rail.get(`${from.level}:${key(edge)}`);
+    const entry = rail.get(`${to.level - 1}:${key(edge)}`);
+    // Ports share a 14px grid; adjacent columns offset it by half a step.
+    // This keeps parallel stubs at least 7px apart, beyond the crossing clearance.
+    // Long links use interval-packed tracks below every card in their row.
+    if (to.level === from.level + 1) {
+      edge.points = [[x1, y1], [exit, y1], [exit, y2], [x2, y2]];
+    } else {
+      const corridor = rowY[edge.band] + height + staggerHeight + 32 + edge.track * trackStep;
+      edge.points = [[x1, y1], [exit, y1], [exit, corridor], [entry, corridor], [entry, y2], [x2, y2]];
+    }
+    edge.path = edge.points.map(([x, y], index) => `${index ? 'L' : 'M'} ${x} ${y}`).join(' ');
+  }
+  return {nodes, edges, layout: `dependency-tags-v3-${height}`,
+    width: Math.max(392, columnX.at(-1)), height: Math.max(300, rowY.at(-1))};
+}
+
+/* Canvas interaction is presentation-only; it never writes task status. */
+function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save, saved}) {
+  const query = selector => root.querySelector(selector);
+  const panel = query('[data-worktree]'), viewport = query('[data-map-viewport]');
+  const world = query('[data-map-world]'), edges = query('[data-map-edges]');
+  const mini = query('[data-minimap]'), miniView = query('[data-mini-view]');
+  const tooltip = query('[data-map-tooltip]'), help = query('[data-map-help]');
+  // Measure wrapped labels before routing links so all tags stay inside their cards.
+  const measure = document.createElement('span');
+  measure.className = 'task-tags map-tag-measure';
+  root.append(measure);
+  let tagHeight = 0;
+  for (const task of board.tasks) {
+    measure.replaceChildren(...(task.tags || []).map(tagChip));
+    tagHeight = Math.max(tagHeight, measure.getBoundingClientRect().height);
+  }
+  measure.remove();
+  const graph = buildBoardGraph(board, Math.ceil(108 + tagHeight)), buttons = new Map(), paths = [];
+  const minZoom = Math.min(.08, 160 / Math.max(graph.width, graph.height));
+  const svg = name => document.createElementNS('http://www.w3.org/2000/svg', name);
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  let camera = null, selected = null, expanded = false, suppressClick = false;
+  const valid = value => value && [value.x, value.y, value.zoom].every(Number.isFinite);
+  const restore = value => {
+    camera = valid(value) && value.layout === graph.layout
+      ? {x: value.x, y: value.y, zoom: clamp(value.zoom, minZoom, 2.5)} : null;
+  };
+  restore(saved);
+  world.style.width = `${graph.width}px`;
+  world.style.height = `${graph.height}px`;
+  query('[data-map-count]').textContent = `${graph.nodes.size} tasks · ${graph.edges.length} links`;
+  for (const edge of graph.edges) {
+    const route = svg('g'), clearance = svg('path'), path = svg('path');
+    clearance.setAttribute('d', edge.path);
+    clearance.setAttribute('class', 'map-edge-clearance');
+    path.setAttribute('d', edge.path);
+    path.setAttribute('class', 'map-edge');
+    path.setAttribute('marker-end', 'url(#board-map-arrow)');
+    path.dataset.from = edge.from;
+    path.dataset.to = edge.to;
+    route.append(clearance, path);
+    edges.append(route);
+    paths.push({edge, path, route});
+  }
+  const hideTooltip = () => { tooltip.hidden = true; };
+  const showTooltip = button => {
+    tooltip.textContent = button.getAttribute('aria-label');
+    tooltip.hidden = false;
+  };
+  for (const node of graph.nodes.values()) {
+    const {task} = node, status = shownStatus(task);
+    const button = document.createElement('button'), head = document.createElement('span');
+    const id = document.createElement('strong'), state = document.createElement('span');
+    const title = document.createElement('span');
+    button.type = 'button';
+    button.className = 'map-node cursor-interaction';
+    button.dataset.taskId = task.id;
+    button.dataset.level = node.level;
+    button.dataset.status = status;
+    button.setAttribute('aria-label', `${task.id}: ${task.title}; ${task.phase}; ${status}; ${(task.tags || []).join(', ')}`);
+    button.setAttribute('aria-describedby', 'board-map-tooltip');
+    Object.assign(button.style, {left: `${node.x}px`, top: `${node.y}px`,
+      width: `${node.width}px`, height: `${node.height}px`});
+    head.className = 'map-node-head';
+    id.textContent = task.id;
+    state.textContent = status;
+    head.append(id, state);
+    title.className = 'map-node-title';
+    title.textContent = task.title;
+    button.append(head, title);
+    const tags = document.createElement('span');
+    tags.className = 'task-tags';
+    tags.append(...(task.tags || []).map(tagChip));
+    button.append(tags);
+    button.addEventListener('click', () => selectTask(task.id));
+    button.addEventListener('pointerenter', () => showTooltip(button));
+    button.addEventListener('pointerleave', hideTooltip);
+    button.addEventListener('focus', () => {
+      showTooltip(button);
+      if (!camera) return;
+      const rect = button.getBoundingClientRect(), bounds = viewport.getBoundingClientRect();
+      if (rect.left < bounds.left || rect.right > bounds.right || rect.top < bounds.top || rect.bottom > bounds.bottom) {
+        focusTask(task.id);
+      }
+    });
+    button.addEventListener('blur', hideTooltip);
+    world.append(button);
+    buttons.set(task.id, button);
+    const mark = svg('rect');
+    for (const key of ['x', 'y', 'width', 'height']) mark.setAttribute(key, node[key]);
+    mini.insertBefore(mark, miniView);
+  }
+  mini.setAttribute('viewBox', `0 0 ${graph.width} ${graph.height}`);
+  const paint = () => {
+    if (!camera || panel.hidden) return;
+    camera.x = clamp(camera.x, 0, graph.width);
+    camera.y = clamp(camera.y, 0, graph.height);
+    const width = viewport.clientWidth, height = viewport.clientHeight;
+    const left = width / 2 - camera.x * camera.zoom, top = height / 2 - camera.y * camera.zoom;
+    world.style.transform = `translate(${left}px, ${top}px) scale(${camera.zoom})`;
+    query('[data-map-zoom]').textContent = `${Math.round(camera.zoom * 100)}%`;
+    query('[data-map-action="in"]').disabled = camera.zoom >= 2.5;
+    query('[data-map-action="out"]').disabled = camera.zoom <= minZoom;
+    miniView.setAttribute('x', camera.x - width / camera.zoom / 2);
+    miniView.setAttribute('y', camera.y - height / camera.zoom / 2);
+    miniView.setAttribute('width', width / camera.zoom);
+    miniView.setAttribute('height', height / camera.zoom);
+  };
+  function fit() {
+    camera = {x: graph.width / 2, y: graph.height / 2,
+      zoom: clamp(Math.min((viewport.clientWidth - 32) / graph.width,
+        (viewport.clientHeight - 32) / graph.height), minZoom, 1)};
+    paint();
+  }
+  function focusTask(id = selected) {
+    const node = graph.nodes.get(id);
+    if (!node) return;
+    camera = {x: node.x + node.width / 2, y: node.y + node.height / 2,
+      zoom: Math.min(1, (viewport.clientWidth - 32) / node.width)};
+    paint();
+  }
+  const zoom = (factor, point = {x: viewport.clientWidth / 2, y: viewport.clientHeight / 2}) => {
+    if (!camera) fit();
+    const next = clamp(camera.zoom * factor, minZoom, 2.5);
+    camera.x += (point.x - viewport.clientWidth / 2) * (1 / camera.zoom - 1 / next);
+    camera.y += (point.y - viewport.clientHeight / 2) * (1 / camera.zoom - 1 / next);
+    camera.zoom = next;
+    paint();
+  };
+  const expand = () => {
+    expanded = !expanded;
+    panel.classList.toggle('is-expanded', expanded);
+    query('[data-map-action="expand"]').setAttribute('aria-pressed', String(expanded));
+    query('[data-map-action="expand"]').textContent = expanded ? 'Restore' : 'Expand';
+    if (expanded) viewport.focus({preventScroll: true});
+    paint();
+  };
+  const actions = {
+    in: () => zoom(1.25), out: () => zoom(.8), fit,
+    reset: () => { camera.zoom = 1; paint(); }, selected: () => focusTask(), expand,
+    help: () => {
+      help.hidden = !help.hidden;
+      query('[data-map-action="help"]').setAttribute('aria-expanded', String(!help.hidden));
+    }
+  };
+  panel.querySelectorAll('[data-map-action]').forEach(button => {
+    button.addEventListener('click', () => { actions[button.dataset.mapAction](); save(); });
+  });
+  const pointers = new Map();
+  let gesture = null;
+  const point = event => {
+    const rect = viewport.getBoundingClientRect();
+    return {x: event.clientX - rect.left, y: event.clientY - rect.top};
+  };
+  const baseline = () => {
+    const values = [...pointers.values()];
+    if (!values.length) { gesture = null; return; }
+    const a = values[0], b = values[1] || a;
+    gesture = {x: (a.x + b.x) / 2, y: (a.y + b.y) / 2,
+      distance: Math.hypot(a.x - b.x, a.y - b.y), camera: {...camera}, moved: false};
+  };
+  viewport.addEventListener('pointerdown', event => {
+    if (event.button !== 0 && event.button !== 1) return;
+    if (event.target.closest('[data-minimap]')) return;
+    if (pointers.size === 0) suppressClick = false;
+    pointers.set(event.pointerId, point(event));
+    viewport.setPointerCapture(event.pointerId);
+    // Capture on the originating node preserves normal node click targeting.
+    event.target.closest('.map-node')?.setPointerCapture(event.pointerId);
+    baseline();
+  });
+  viewport.addEventListener('pointermove', event => {
+    if (!pointers.has(event.pointerId) || !gesture) return;
+    pointers.set(event.pointerId, point(event));
+    const values = [...pointers.values()], a = values[0], b = values[1] || a;
+    const x = (a.x + b.x) / 2, y = (a.y + b.y) / 2;
+    const dx = x - gesture.x, dy = y - gesture.y;
+    if (Math.hypot(dx, dy) < 4 && values.length === 1 && !gesture.moved) return;
+    gesture.moved = true;
+    suppressClick = true;
+    hideTooltip();
+    viewport.classList.add('is-panning');
+    camera = {...gesture.camera};
+    if (values.length > 1 && gesture.distance > 0) {
+      zoom(Math.hypot(a.x - b.x, a.y - b.y) / gesture.distance, {x: gesture.x, y: gesture.y});
+    }
+    camera.x -= dx / camera.zoom;
+    camera.y -= dy / camera.zoom;
+    paint();
+  });
+  const release = event => {
+    if (!pointers.delete(event.pointerId)) return;
+    baseline();
+    if (!pointers.size) { viewport.classList.remove('is-panning'); save(); }
+  };
+  viewport.addEventListener('pointerup', release);
+  viewport.addEventListener('pointercancel', release);
+  viewport.addEventListener('lostpointercapture', release);
+  viewport.addEventListener('click', event => {
+    if (!suppressClick || event.detail === 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressClick = false;
+  }, true);
+  let wheelTimer;
+  viewport.addEventListener('wheel', event => {
+    event.preventDefault();
+    hideTooltip();
+    const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientHeight : 1);
+    zoom(Math.exp(-clamp(delta, -200, 200) * .003), point(event));
+    clearTimeout(wheelTimer);
+    wheelTimer = setTimeout(save, 180);
+  }, {passive: false});
+  mini.addEventListener('pointerdown', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    const transform = mini.getScreenCTM();
+    if (!transform) return;
+    const cursor = new DOMPoint(event.clientX, event.clientY).matrixTransform(transform.inverse());
+    camera.x = cursor.x;
+    camera.y = cursor.y;
+    paint();
+    save();
+  });
+  panel.addEventListener('keydown', event => {
+    if (expanded && event.key === 'Tab') {
+      const stops = [...panel.querySelectorAll('button:not(:disabled), [tabindex="0"]')]
+        .filter(element => element.getClientRects().length);
+      const next = event.shiftKey ? stops.at(-1) : stops[0];
+      const boundary = event.shiftKey ? stops[0] : stops.at(-1);
+      if (document.activeElement === boundary) { event.preventDefault(); next?.focus(); }
+      return;
+    }
+    if (event.key === 'Escape') {
+      hideTooltip(); help.hidden = true;
+      query('[data-map-action="help"]').setAttribute('aria-expanded', 'false');
+      if (expanded) { expand(); query('[data-map-action="expand"]').focus(); }
+      return;
+    }
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    const moves = {ArrowLeft: [-80, 0], ArrowRight: [80, 0], ArrowUp: [0, -80], ArrowDown: [0, 80]};
+    if (moves[event.key]) {
+      const [x, y] = moves[event.key];
+      camera.x += x / camera.zoom; camera.y += y / camera.zoom; paint();
+    } else if (['+', '='].includes(event.key)) zoom(1.25);
+    else if (event.key === '-') zoom(.8);
+    else if (event.key === '0') fit();
+    else if (event.key === '1') actions.reset();
+    else if (event.key.toLowerCase() === 'f') focusTask();
+    else return;
+    event.preventDefault();
+    save();
+  });
+  root.addEventListener('pointerdown', event => {
+    if (help.hidden || help.contains(event.target) || event.target.closest('[data-map-action="help"]')) return;
+    help.hidden = true;
+    query('[data-map-action="help"]').setAttribute('aria-expanded', 'false');
+  });
+  new ResizeObserver(() => { if (!panel.hidden) camera ? paint() : fit(); }).observe(viewport);
+  return {
+    state: () => camera ? {...camera, layout: graph.layout} : null,
+    restore,
+    show(id) {
+      selected = id;
+      query('[data-map-action="selected"]').disabled = !graph.nodes.has(id);
+      const related = new Set();
+      for (const {edge, path, route} of paths) {
+        const match = edge.from === id || edge.to === id;
+        path.classList.toggle('is-related', match);
+        path.setAttribute('marker-end', `url(#board-map-${match ? 'selected-' : ''}arrow)`);
+        if (match) { related.add(edge.from); related.add(edge.to); edges.append(route); }
+      }
+      for (const [taskId, button] of buttons) {
+        button.setAttribute('aria-pressed', String(taskId === id));
+        button.classList.toggle('is-related', taskId !== id && related.has(taskId));
+      }
+      if (!panel.hidden) camera ? paint() : fit();
+    }
+  };
+}
+
+      const root = document.getElementById("task-dashboard");
+      const dataNode = document.getElementById("task-dashboard-data");
+      if (!root || !dataNode) return;
+      const board = JSON.parse(dataNode.textContent);
+      const byId = new Map(board.tasks.map(task => [task.id, task]));
+      const query = selector => root.querySelector(selector);
+      const all = selector => Array.from(root.querySelectorAll(selector));
+      const dependenciesDone = task => task.depends_on.every(id => byId.get(id)?.status === "done");
+      const shownStatus = task => task.status === "planned" && dependenciesDone(task) ? "ready" : task.status;
+      const storageKey = `task-dashboard:${location.pathname}:${board.milestone.id}`;
+      let localState;
+      try { localState = JSON.parse(localStorage.getItem(storageKey)); } catch {}
+      const stored = window.openai?.widgetState?.privateContent || localState;
+      const saved = stored && typeof stored === "object" ? stored : {};
+      const requestedView = new URLSearchParams(location.search).get('view');
+      let viewMode = ["flow", "list", "worktree"].includes(requestedView) ? requestedView
+        : ["flow", "list", "worktree"].includes(saved.viewMode) ? saved.viewMode : "flow";
+      let taskMap;
+      const firstReady = board.tasks.find(task => shownStatus(task) === "ready");
+      const firstTask = firstReady || board.tasks[0];
+      const selectionFor = state => {
+        const task = byId.get(state.selectedTaskId);
+        const phase = board.phases.find(item => item.id === state.selectedPhaseId);
+        const selectedPhaseId = task?.phase || phase?.id || firstTask?.phase || board.phases[0]?.id;
+        const candidates = board.tasks.filter(item => item.phase === selectedPhaseId);
+        return {selectedPhaseId, selectedTaskId: task?.id ||
+          candidates.find(item => shownStatus(item) === "ready")?.id || candidates[0]?.id};
+      };
+      let {selectedTaskId, selectedPhaseId} = selectionFor(saved);
+
+      const label = value => String(value).replaceAll("_", " ");
+      const tagChip = tag => {
+        const chip = document.createElement("span");
+        chip.className = "task-tag";
+        chip.textContent = tag;
+        const key = tag.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        chip.dataset.category = key;
+        return chip;
+      };
+      const fillList = (element, values, emptyText) => {
+        element.replaceChildren();
+        const items = values.length ? values : [emptyText];
+        items.forEach(value => {
+          const item = document.createElement("li");
+          item.textContent = value;
+          element.append(item);
+        });
+      };
+      const categoryText = tasks => {
+        const counts = new Map();
+        tasks.forEach(task => counts.set(shownStatus(task), (counts.get(shownStatus(task)) || 0) + 1));
+        return ["ready", "active", "review", "blocked", "done", "planned", "deferred"]
+          .filter(status => counts.get(status))
+          .map(status => `${counts.get(status)} ${status}`)
+          .join(" · ") || "No tasks";
+      };
+      const saveState = () => {
+        const state = { selectedTaskId, selectedPhaseId, viewMode, camera: taskMap?.state() };
+        try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch {}
+        if (typeof window.openai?.setWidgetState === "function") {
+          window.openai.setWidgetState({modelContent: {selectedTaskId, selectedPhaseId, viewMode},
+            privateContent: state}).catch(() => {});
+        }
+      };
+
+      query("[data-board-title]").textContent = board.milestone.title;
+      query("[data-board-meta]").textContent = `${board.milestone.id} · Updated ${board.milestone.updated_at}`;
+      query("[data-baseline]").textContent = board.milestone.baseline_status;
+      const planning = board.tasks.filter(task => task.kind === "planning" || task.kind === "decision");
+      const product = board.tasks.filter(task => task.kind === "implementation" || task.kind === "qualification");
+      query("[data-planning-count]").textContent = planning.length;
+      query("[data-planning-state]").textContent = categoryText(planning);
+      query("[data-product-count]").textContent = product.length;
+      query("[data-product-state]").textContent = categoryText(product);
+
+      const renderPhases = () => {
+        const grid = query("[data-phase-grid]");
+        grid.replaceChildren();
+        board.phases.forEach(phase => {
+          const tasks = board.tasks.filter(task => task.phase === phase.id);
+          const done = tasks.filter(task => task.status === "done").length;
+          const percent = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "metro-phase cursor-interaction";
+          button.setAttribute("aria-pressed", phase.id === selectedPhaseId ? "true" : "false");
+          button.setAttribute("aria-label", `${phase.title}: ${done} of ${tasks.length} done`);
+          const title = document.createElement("div");
+          title.textContent = phase.title;
+          const meta = document.createElement("div");
+          meta.className = "metro-muted metro-small tabular-nums";
+          meta.textContent = `${done}/${tasks.length} done`;
+          const progress = document.createElement("div");
+          progress.className = "metro-progress";
+          progress.setAttribute("role", "progressbar");
+          progress.setAttribute("aria-label", `${phase.title} completion`);
+          progress.setAttribute("aria-valuenow", String(percent));
+          progress.setAttribute("aria-valuemin", "0");
+          progress.setAttribute("aria-valuemax", "100");
+          const bar = document.createElement("div");
+          bar.className = "metro-bar";
+          bar.style.width = `${percent}%`;
+          progress.append(bar);
+          button.append(title, meta, progress);
+          button.addEventListener("click", () => {
+            selectedPhaseId = phase.id;
+            const candidates = board.tasks.filter(task => task.phase === phase.id);
+            selectedTaskId = candidates.find(task => shownStatus(task) === "ready")?.id || candidates[0]?.id;
+            render();
+            saveState();
+          });
+          grid.append(button);
+        });
+      };
+
+      const renderTasks = () => {
+        const phase = board.phases.find(item => item.id === selectedPhaseId);
+        query("[data-phase-title]").textContent = phase?.title || "Tasks";
+        query("[data-phase-gate]").textContent = phase ? `Gate: ${phase.gate}` : "";
+        const list = query("[data-task-list]");
+        list.replaceChildren();
+        const tasks = board.tasks.filter(task => task.phase === selectedPhaseId);
+        if (!tasks.length) {
+          const empty = document.createElement("p");
+          empty.className = "metro-muted empty";
+          empty.textContent = "No tasks in this phase.";
+          list.append(empty);
+          return;
+        }
+        tasks.forEach(task => {
+          const row = document.createElement("div");
+          row.className = "task-row";
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "metro-task cursor-interaction";
+          button.dataset.status = shownStatus(task);
+          button.setAttribute("aria-pressed", task.id === selectedTaskId ? "true" : "false");
+          button.setAttribute("aria-label", `Select ${task.id}: ${task.title}; ${label(shownStatus(task))}`);
+          button.dataset.tooltip = `${task.title} · ${label(shownStatus(task))}`;
+          button.textContent = task.id;
+          const copy = document.createElement("div");
+          copy.className = "task-copy";
+          const title = document.createElement("div");
+          title.textContent = task.title;
+          const meta = document.createElement("div");
+          meta.className = "task-list-meta metro-small";
+          const status = document.createElement("span");
+          status.textContent = label(shownStatus(task));
+          const kind = document.createElement("span");
+          kind.textContent = label(task.kind);
+          meta.append(status, kind);
+          for (const tag of task.tags || []) {
+            meta.append(tagChip(tag));
+          }
+          copy.append(title, meta);
+          button.addEventListener("click", () => {
+            selectedTaskId = task.id;
+            render();
+            saveState();
+          });
+          row.append(button, copy);
+          list.append(row);
+        });
+      };
+
+      const selectFlowTask = id => {
+        selectedTaskId = id;
+        selectedPhaseId = byId.get(id).phase;
+        render();
+        saveState();
+        query(`[data-flow-current] button`)?.focus({ preventScroll: true });
+      };
+      const drawEdges = () => {
+        const edges = query("[data-flow-edges]");
+        edges.replaceChildren();
+        if (viewMode !== "flow") return;
+        const layout = query("[data-flow-layout]").getBoundingClientRect();
+        const center = query("[data-flow-current] button");
+        if (!center || !layout.width) return;
+        const vertical = getComputedStyle(query("[data-flow-layout]")).gridTemplateColumns.split(" ").length === 1;
+        const connect = (from, to) => {
+          const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
+          const x1 = (vertical ? a.x + a.width / 2 : a.right) - layout.x;
+          const y1 = (vertical ? a.bottom : a.y + a.height / 2) - layout.y;
+          const x2 = (vertical ? b.x + b.width / 2 : b.x) - layout.x;
+          const y2 = (vertical ? b.y : b.y + b.height / 2) - layout.y;
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          // On narrow screens route beside stacked siblings, never through their tiles.
+          const d = vertical
+            ? `M ${x1} ${y1} v 8 H 4 V ${y2 - 12} H ${x2} V ${y2 - 3}`
+            : `M ${x1} ${y1} C ${(x1+x2)/2} ${y1}, ${(x1+x2)/2} ${y2}, ${x2-3} ${y2}`;
+          path.setAttribute("d", d);
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke", "var(--ci-line-strong)");
+          path.setAttribute("stroke-width", "1.5");
+          path.setAttribute("marker-end", "url(#board-flow-arrow)");
+          edges.append(path);
+        };
+        all("[data-flow-before] button").forEach(node => connect(node, center));
+        all("[data-flow-after] button").forEach(node => connect(center, node));
+      };
+      const renderFlow = () => {
+        const task = byId.get(selectedTaskId);
+        const groups = [task?.depends_on.map(id => byId.get(id)) || [], task ? [task] : [],
+          board.tasks.filter(item => item.depends_on.includes(selectedTaskId))];
+        ["before", "current", "after"].forEach((side, index) => {
+          const column = query(`[data-flow-${side}]`);
+          column.replaceChildren();
+          groups[index].forEach(item => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "flow-node cursor-interaction";
+            button.dataset.status = shownStatus(item);
+            button.setAttribute("aria-pressed", String(item.id === selectedTaskId));
+            [item.id, item.title, `${item.phase} · ${label(shownStatus(item))}`].forEach(text => {
+              const line = document.createElement("span");
+              line.textContent = text;
+              button.append(line);
+            });
+            const tags = document.createElement("span");
+            tags.className = "task-tags";
+            tags.append(...(item.tags || []).map(tagChip));
+            button.append(tags);
+            button.addEventListener("click", () => selectFlowTask(item.id));
+            column.append(button);
+          });
+          if (!groups[index].length) column.textContent = index === 0 ? "No prerequisites" : "No dependent tasks";
+        });
+        requestAnimationFrame(drawEdges);
+      };
+      const renderDetail = () => {
+        const task = byId.get(selectedTaskId);
+        const detail = query("[data-detail]");
+        detail.hidden = !task;
+        if (!task) return;
+        query("[data-task-title]").textContent = `${task.id} · ${task.title}`;
+        query("[data-task-status]").textContent = label(shownStatus(task));
+        query("[data-task-kind]").textContent = `Kind: ${label(task.kind)}`;
+        query("[data-task-owner]").textContent = `Owner: ${task.owner}`;
+        query("[data-task-role]").textContent = `Role: ${task.model_role}`;
+        query("[data-task-tags]").replaceChildren(...(task.tags || []).map(tagChip));
+        fillList(query("[data-acceptance]"), task.acceptance, "No acceptance criteria recorded.");
+        fillList(query("[data-validation]"), task.validation, "No validation recorded.");
+        fillList(query("[data-evidence]"), task.evidence, "No evidence recorded yet.");
+        fillList(query("[data-scope]"), task.scope, "No scope recorded.");
+        query("[data-blocked-section]").hidden = !task.blocked_reason;
+        query("[data-blocked-reason]").textContent = task.blocked_reason;
+        query("[data-review-section]").hidden = !task.review;
+        query("[data-review]").textContent = task.review;
+        query("[data-notes-section]").hidden = !task.notes;
+        query("[data-notes]").textContent = task.notes;
+        const deps = task.depends_on.map(id => {
+          const dependency = byId.get(id);
+          return dependency ? `${id} · ${dependency.title} (${label(shownStatus(dependency))})` : id;
+        });
+        fillList(query("[data-dependencies]"), deps, "No dependencies.");
+        const action = query("[data-request-work]");
+        action.textContent = "Copy task brief";
+        const brief = query("[data-task-brief]");
+        brief.hidden = true;
+        brief.value = taskPrompt(task);
+        query("[data-action-note]").textContent = "Read-only snapshot · task changes belong in the ledger.";
+      };
+
+      const render = () => {
+        root.classList.toggle('is-worktree', viewMode === 'worktree');
+        query('[data-worktree]').hidden = viewMode !== 'worktree';
+        query("[data-flow]").hidden = viewMode !== "flow";
+        query("[data-list-panel]").hidden = viewMode !== "list";
+        query("[data-workspace]").style.gridTemplateColumns = viewMode === "flow" ? "1fr" : "";
+        all("[data-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.view === viewMode)));
+        renderPhases();
+        renderTasks();
+        renderFlow();
+        renderDetail();
+        taskMap?.show(selectedTaskId);
+      };
+      all("[data-view]").forEach(button => button.addEventListener("click", () => {
+        viewMode = button.dataset.view;
+        try {
+          const url = new URL(location.href);
+          url.searchParams.set('view', viewMode);
+          history.replaceState(null, '', url);
+        } catch {}
+        render();
+        saveState();
+      }));
+      new ResizeObserver(drawEdges).observe(query("[data-flow-layout]"));
+
+      function taskPrompt(task) {
+        return [
+          `Project: ${board.milestone.title} (${board.milestone.id})`,
+          `Task: ${task.id} · ${task.title}`,
+          `Snapshot: ${board.milestone.updated_at} · ${shownStatus(task)}`,
+          `Owner: ${task.owner}`,
+          `Dependencies: ${task.depends_on.join(", ") || "None"}`,
+          "Scope:", ...task.scope.map(item => `- ${item}`),
+          "Acceptance:", ...task.acceptance.map(item => `- ${item}`),
+          "Re-read the authoritative ledger and applicable project instructions before acting.",
+          "This brief is context only; copying it does not authorize or start work."
+        ].join("\n");
+      }
+      query("[data-request-work]").addEventListener("click", async () => {
+        const brief = query("[data-task-brief]");
+        const text = brief.value;
+        try {
+          await navigator.clipboard.writeText(text);
+          query("[data-action-note]").textContent = "Task brief copied.";
+        } catch {
+          brief.hidden = false;
+          brief.focus();
+          brief.select();
+          query("[data-action-note]").textContent = "Copy the selected brief with Ctrl+C or Command+C.";
+        }
+      });
+
+      window.addEventListener("openai:set_globals", event => {
+        const state = event.detail?.globals?.widgetState?.privateContent;
+        if (!state || typeof state !== "object") return;
+        if (["flow", "list", "worktree"].includes(state.viewMode)) viewMode = state.viewMode;
+        taskMap?.restore(state.camera);
+        ({selectedTaskId, selectedPhaseId} = selectionFor(state));
+        render();
+      });
+
+      taskMap = createBoardCanvas({root, board, shownStatus, tagChip, saved: saved.camera, save: saveState,
+        selectTask: id => { selectedTaskId = id; selectedPhaseId = byId.get(id).phase; render(); saveState(); }});
+      const statusTokens = {done: 'success', active: 'warning', ready: 'info', review: 'info',
+        blocked: 'danger', planned: 'line-strong', deferred: 'muted'};
+      for (const [status, token] of Object.entries(statusTokens)) {
+        const item = document.createElement('span');
+        item.textContent = status;
+        item.style.setProperty('--status-color', `var(--ci-${token})`);
+        query('[data-map-legend]').append(item);
+      }
+      render();
+    })();
+  </script>
+</section>
+
+</body>
+</html>

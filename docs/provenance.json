@@ -1,0 +1,17 @@
+{
+  "source_repository": "skbastiaan/project-switcher",
+  "source_branch": "milestone/v2-rewrite",
+  "source_base_commit": "9685b405607e552c7c3c5a17e80c3252b20d0d59",
+  "source_state": "Working-tree snapshot; the input hashes identify extracted bytes, including uncommitted changes.",
+  "extracted_on": "2026-10-17",
+  "inputs_sha256": {
+    "tools/tasks.py": "1141d006c66ada53ccf891bc5e252b7b2b229719909547938fcfc547a7614f0c",
+    "tools/board-template.html": "68f0d8b4b12d1c655cc6840510652409bec7d8c97339c5cee954acedea81a67f",
+    "tools/board.css": "f31ff183646f42dbf9841cc0d51594257b3062884a5ba274ab0b8a5e2ce36442",
+    "tools/board-canvas.css": "f1a8c3633de6d92a97b2a0df51363502a487e6b8aaf8278364dd2a7a5ab0ed26",
+    "tools/board-graph.js": "94128361902606e5d148a7ce3cae48cfb0530d80dc9db48d2042cc7ff1542f8d",
+    "tools/board-canvas.js": "7202196f170b07ad73b3e54414641221147a2f3d4cc70de0b6da84d23cb5e496",
+    "web/shared/ci/tokens.css": "96d733b423b11328092c59a9e3acf43a719e724f7482f0bbd19ba556a9a11dcf",
+    "LICENSE.md": "d1e445c17c1c34513bc011ae5fb2973f6c2dc1e0e98121a0bd72f3a1bb0f67fc"
+  }
+}

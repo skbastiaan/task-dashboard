@@ -1,0 +1,122 @@
+{
+  "date": "2026-10-17",
+  "environment": {
+    "platform": "win32",
+    "python": "3.12.14"
+  },
+  "checks": [
+    {
+      "check": "init works outside tool checkout with spaces in ledger path",
+      "outcome": "passed"
+    },
+    {
+      "check": "init refuses overwrite without changing existing bytes",
+      "outcome": "passed"
+    },
+    {
+      "check": "unnamed ownership is rejected without mutation",
+      "outcome": "passed"
+    },
+    {
+      "check": "lifecycle requires review transition and actual completion metadata",
+      "outcome": "passed"
+    },
+    {
+      "check": "reopen requires reason and clears superseded review/validation",
+      "outcome": "passed"
+    },
+    {
+      "check": "incomplete prerequisite blocks start",
+      "outcome": "passed"
+    },
+    {
+      "check": "generation detects stale output and repairs deterministically",
+      "outcome": "passed"
+    },
+    {
+      "check": "writer lock rejects set",
+      "outcome": "passed"
+    },
+    {
+      "check": "writer lock rejects render",
+      "outcome": "passed"
+    },
+    {
+      "check": "inline export cannot overwrite ledger, outputs or lock",
+      "outcome": "passed"
+    },
+    {
+      "check": "inline fragment and complete offline HTML are distinct outputs",
+      "outcome": "passed"
+    },
+    {
+      "check": "schema rejects cycles",
+      "outcome": "passed"
+    },
+    {
+      "check": "schema rejects missing prerequisites",
+      "outcome": "passed"
+    },
+    {
+      "check": "schema rejects duplicate IDs",
+      "outcome": "passed"
+    },
+    {
+      "check": "schema rejects blocked without reason",
+      "outcome": "passed"
+    },
+    {
+      "check": "embedded data escapes HTML script delimiters and round-trips",
+      "outcome": "passed"
+    },
+    {
+      "check": "HTTP renders supplied external ledger with no-store and correct title",
+      "outcome": "passed"
+    },
+    {
+      "check": "HTTP has no file-serving or write route",
+      "outcome": "passed"
+    },
+    {
+      "check": "revision changes when authoritative ledger changes",
+      "outcome": "passed"
+    },
+    {
+      "check": "malformed root returns explicit 503",
+      "outcome": "passed"
+    },
+    {
+      "check": "server recovers after ledger repair",
+      "outcome": "passed"
+    },
+    {
+      "check": "proprietary license retained byte for byte",
+      "outcome": "passed"
+    },
+    {
+      "check": "existing schema-v1 ledger compatible: tasks",
+      "outcome": "passed"
+    },
+    {
+      "check": "existing schema-v1 ledger compatible: footage-inspector",
+      "outcome": "passed"
+    }
+  ],
+  "implementation_sha256": {
+    "tools/board-canvas.css": "0173ed4c6f99c904be7d403aef540916bedbbb711af0449567e5254b9acbb384",
+    "tools/board-canvas.js": "7202196f170b07ad73b3e54414641221147a2f3d4cc70de0b6da84d23cb5e496",
+    "tools/board-graph.js": "1d593ac0c9b59c210d76395bc070b695136b14ef34d94e6059dc7c7a88bd34e5",
+    "tools/board-template.html": "267f758daea5e2f8d30fb26fb21b255e0942a711768e68b0cff2d69f47f9affc",
+    "tools/board.css": "ef3583344c10034618828c061757025e2d72440e3ce87e6199b8d6ce0079e8b5",
+    "tools/check.py": "f5765d1873cf08d85b41ab102d472d0148e55580d2988346136a372892589e04",
+    "tools/ledger_schema.py": "4a659aded36ff06521302ad0b4ff608d711f879f7aaefc3bc7e71539c524b2e7",
+    "tools/page.py": "4e92fd93771d292a0800a04538535ffc3866088ac10fdad337fd2f8ddfa0cb1e",
+    "tools/serve_board.py": "3f95f9ac235951847402421108974739fceee6b1d3494913c30307ac77b02145",
+    "tools/tasks.py": "444c4d75c46d693abc16a1cd51156624935e5af1871c1f1c1aa291ed34f9edc4",
+    "tools/tokens.css": "dfe357b338a93e482fcd9a2b50c2a9e6da72b202298b839d073be8b807a0b4ce"
+  },
+  "limits": [
+    "Focused temporary diagnostic only; no development unit tests added.",
+    "No qualification, remote deployment, LAN configuration or persistent service changes."
+  ]
+}

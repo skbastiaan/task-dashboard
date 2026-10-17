@@ -1,0 +1,68 @@
+    #task-dashboard { color: var(--ci-text); background: var(--ci-bg); width: 100%; padding: 8px; box-sizing: border-box; font: var(--ci-type-body)/1.4 var(--ci-font); }
+    #task-dashboard * { box-sizing: border-box; }
+    #task-dashboard [hidden] { display: none !important; }
+    #task-dashboard h1 { font-size: var(--ci-type-title); font-weight: 600; line-height: 1.15; margin: 0 0 12px; }
+    #task-dashboard h2 { font-size: var(--ci-type-title); font-weight: 600; }
+    #task-dashboard h3 { font-size: var(--ci-type-section); font-weight: 600; }
+    #task-dashboard button { font: inherit; color: inherit; border: 1px solid var(--ci-line); border-radius: var(--ci-radius); text-align: left; padding: 6px; background: var(--ci-panel-raised); min-height: 28px; }
+    #task-dashboard button:hover { filter: brightness(1.18); }
+    #task-dashboard button[aria-pressed="true"] { outline: 2px solid var(--ci-focus); outline-offset: -2px; }
+    #task-dashboard button:disabled { opacity: .55; }
+    #task-dashboard .metro-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 6px; margin: 8px 0; }
+    #task-dashboard .metro-stat { display: grid; padding: 16px; background: var(--ci-accent); }
+    #task-dashboard .metro-stat:nth-child(2) { background: var(--ci-panel-raised); }
+    #task-dashboard .metro-value { font-size: var(--ci-type-meter-small); font-weight: 400; }
+    #task-dashboard .metro-small { font-size: var(--ci-type-small); }
+    #task-dashboard .metro-muted { color: var(--ci-muted); }
+    #task-dashboard .metro-phase { background: var(--ci-panel); min-height: 78px; display: grid; gap: 8px; align-content: space-between; }
+    #task-dashboard .metro-progress { height: 4px; background: var(--ci-line); }
+    #task-dashboard .metro-bar { height: 100%; background: var(--ci-text); }
+    #task-dashboard .metro-detail { background: var(--ci-panel); padding: 8px; overflow-wrap: anywhere; }
+    #task-dashboard .metro-badge { background: var(--ci-accent); padding: 4px 10px; }
+    #task-dashboard .task-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-block: 6px; }
+    #task-dashboard .task-tag { --tag-color: var(--ci-muted); display: inline-block; padding: 2px 6px; border: 1px solid var(--tag-color); border-radius: var(--ci-radius); background: color-mix(in srgb, var(--tag-color) 12%, var(--ci-panel)); color: var(--tag-color); font-size: var(--ci-type-small); line-height: 1.4; max-width: 100%; overflow-wrap: anywhere; }
+    #task-dashboard .metro-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    #task-dashboard .metro-primary { background: var(--ci-accent); }
+    #task-dashboard .metro-task-link { display: inline-block; padding: 6px; min-height: 28px; color: var(--ci-text); text-decoration: none; }
+    #task-dashboard .metro-task-link:hover { filter: brightness(1.18); }
+    #task-dashboard .view-controls { display: flex; gap: 6px; margin: 8px 0; }
+    #task-dashboard .flow-layout { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 40px; position: relative; margin: 20px 0 28px; }
+    #task-dashboard .flow-column { display: grid; gap: 12px; align-content: center; min-width: 0; }
+    #task-dashboard .flow-node { display: grid; gap: 6px; position: relative; z-index: 1; overflow-wrap: anywhere; background: var(--ci-panel); width: 100%; }
+    #task-dashboard button[data-status="done"] { background: var(--ci-success-soft); }
+    #task-dashboard button[data-status="ready"] { background: var(--ci-accent); }
+    #task-dashboard button[data-status="blocked"] { background: var(--ci-danger-soft); }
+    #task-dashboard button[data-status="active"] { background: var(--ci-warning-soft); }
+    #task-dashboard button[data-status="review"] { background: var(--ci-info-soft); }
+    #task-dashboard button[data-status="planned"] { background: var(--ci-panel); }
+    #task-dashboard button[data-status="deferred"] { background: var(--ci-panel-raised); }
+    #task-dashboard .flow-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+    #task-dashboard .board-header { background: var(--ci-accent); padding: 8px; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding-inline-end: 6rem; }
+    #task-dashboard .board-header p { color: var(--ci-text); }
+    #task-dashboard :focus-visible { outline: 2px solid var(--ci-focus); outline-offset: -2px; }
+    #task-dashboard .board-header > div { min-width: 0; }
+    #task-dashboard .board-header p { margin: .25rem 0 0; }
+    #task-dashboard .board-workspace { display: grid; grid-template-columns: minmax(13rem, .75fr) minmax(0, 1.5fr); gap: 1.25rem; align-items: start; }
+    #task-dashboard .task-list { display: grid; gap: .25rem; }
+    #task-dashboard .task-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .75rem; align-items: start; min-width: 0; }
+    #task-dashboard .task-copy { min-width: 0; overflow-wrap: anywhere; }
+    #task-dashboard .task-list-meta { display: flex; flex-wrap: wrap; gap: .25rem .75rem; margin-top: .25rem; }
+    #task-dashboard .detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    #task-dashboard .detail-head h2 { margin: 0; }
+    #task-dashboard .detail-meta { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-block: .5rem 1rem; }
+    #task-dashboard .detail-section { margin-block: 1rem; }
+    #task-dashboard .detail-section h3 { margin-bottom: .35rem; }
+    #task-dashboard .detail-section ul { margin-block: .25rem 0; padding-inline-start: 1.25rem; }
+    #task-dashboard .detail-section li + li { margin-top: .25rem; }
+    #task-dashboard .action-row { align-items: center; margin-top: 1rem; }
+    #task-dashboard .action-note { margin: 0; }
+    #task-dashboard .empty { padding-block: 1rem; }
+    @media (max-width: 620px) {
+      #task-dashboard { padding: 16px; }
+      #task-dashboard .flow-layout { grid-template-columns: 1fr; gap: 44px; }
+      #task-dashboard .flow-column { padding-inline: 16px; }
+      #task-dashboard .board-header { background: var(--ci-accent); padding: 8px; display: block; padding-inline-end: 0; }
+      #task-dashboard .board-workspace { grid-template-columns: 1fr; }
+      #task-dashboard .detail-head { display: block; }
+    }
+#task-dashboard [data-task-brief] { width: 100%; min-height: 180px; background: var(--ci-bg); color: var(--ci-text); border: 1px solid var(--ci-line); padding: 8px; font: inherit; }

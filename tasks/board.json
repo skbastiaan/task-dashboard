@@ -1,0 +1,215 @@
+{
+  "schema_version": 1,
+  "milestone": {
+    "id": "example-project",
+    "title": "Example project",
+    "updated_at": "2026-10-17T12:00:00+00:00",
+    "baseline_status": "Sample data · seven tasks illustrating the available states"
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "title": "Plan",
+      "outcome": "Agree on the scope",
+      "gate": "Scope review"
+    },
+    {
+      "id": "P1",
+      "title": "Build",
+      "outcome": "Deliver a usable first version",
+      "gate": "Implementation review"
+    },
+    {
+      "id": "P2",
+      "title": "Release",
+      "outcome": "Verify and document the release",
+      "gate": "Release decision"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Define the project scope",
+      "phase": "P0",
+      "kind": "planning",
+      "status": "done",
+      "depends_on": [],
+      "scope": [
+        "Synthetic example only"
+      ],
+      "acceptance": [
+        "Replace this criterion with a concrete outcome."
+      ],
+      "validation": [
+        "passed: fictional example for demonstrating the done state"
+      ],
+      "model_role": "Project contributor",
+      "owner": "Example owner",
+      "evidence": [
+        "Synthetic example; no real project work is claimed."
+      ],
+      "review": "Fictional review for the sample board.",
+      "blocked_reason": "",
+      "notes": "Sample data. Initialize a fresh ledger for your own project.",
+      "tags": [
+        "Example"
+      ]
+    },
+    {
+      "id": "TASK-002",
+      "title": "Choose the first release features",
+      "phase": "P0",
+      "kind": "decision",
+      "status": "planned",
+      "depends_on": [
+        "TASK-001"
+      ],
+      "scope": [
+        "Synthetic example only"
+      ],
+      "acceptance": [
+        "Replace this criterion with a concrete outcome."
+      ],
+      "validation": [],
+      "model_role": "Project contributor",
+      "owner": "Example owner",
+      "evidence": [],
+      "review": "",
+      "blocked_reason": "",
+      "notes": "Sample data. Initialize a fresh ledger for your own project.",
+      "tags": [
+        "Example"
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "title": "Build the core workflow",
+      "phase": "P1",
+      "kind": "implementation",
+      "status": "active",
+      "depends_on": [
+        "TASK-001"
+      ],
+      "scope": [
+        "Synthetic example only"
+      ],
+      "acceptance": [
+        "Replace this criterion with a concrete outcome."
+      ],
+      "validation": [],
+      "model_role": "Project contributor",
+      "owner": "Example owner",
+      "evidence": [],
+      "review": "",
+      "blocked_reason": "",
+      "notes": "Sample data. Initialize a fresh ledger for your own project.",
+      "tags": [
+        "Example"
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "title": "Review the quick-start guide",
+      "phase": "P1",
+      "kind": "implementation",
+      "status": "review",
+      "depends_on": [
+        "TASK-001"
+      ],
+      "scope": [
+        "Synthetic example only"
+      ],
+      "acceptance": [
+        "Replace this criterion with a concrete outcome."
+      ],
+      "validation": [],
+      "model_role": "Project contributor",
+      "owner": "Example owner",
+      "evidence": [],
+      "review": "",
+      "blocked_reason": "",
+      "notes": "Sample data. Initialize a fresh ledger for your own project.",
+      "tags": [
+        "Example"
+      ]
+    },
+    {
+      "id": "TASK-005",
+      "title": "Connect the example data source",
+      "phase": "P1",
+      "kind": "implementation",
+      "status": "blocked",
+      "depends_on": [
+        "TASK-001"
+      ],
+      "scope": [
+        "Synthetic example only"
+      ],
+      "acceptance": [
+        "Replace this criterion with a concrete outcome."
+      ],
+      "validation": [],
+      "model_role": "Project contributor",
+      "owner": "Example owner",
+      "evidence": [],
+      "review": "",
+      "blocked_reason": "Waiting for example access details.",
+      "notes": "Sample data. Initialize a fresh ledger for your own project.",
+      "tags": [
+        "Example"
+      ]
+    },
+    {
+      "id": "TASK-006",
+      "title": "Verify the release candidate",
+      "phase": "P2",
+      "kind": "qualification",
+      "status": "planned",
+      "depends_on": [
+        "TASK-003",
+        "TASK-004",
+        "TASK-005"
+      ],
+      "scope": [
+        "Synthetic example only"
+      ],
+      "acceptance": [
+        "Replace this criterion with a concrete outcome."
+      ],
+      "validation": [],
+      "model_role": "Project contributor",
+      "owner": "Example owner",
+      "evidence": [],
+      "review": "",
+      "blocked_reason": "",
+      "notes": "Sample data. Initialize a fresh ledger for your own project.",
+      "tags": [
+        "Example"
+      ]
+    },
+    {
+      "id": "TASK-007",
+      "title": "Explore a future extension",
+      "phase": "P2",
+      "kind": "planning",
+      "status": "deferred",
+      "depends_on": [],
+      "scope": [
+        "Synthetic example only"
+      ],
+      "acceptance": [
+        "Replace this criterion with a concrete outcome."
+      ],
+      "validation": [],
+      "model_role": "Project contributor",
+      "owner": "Example owner",
+      "evidence": [],
+      "review": "",
+      "blocked_reason": "",
+      "notes": "Sample data. Initialize a fresh ledger for your own project.",
+      "tags": [
+        "Example"
+      ]
+    }
+  ]
+}
