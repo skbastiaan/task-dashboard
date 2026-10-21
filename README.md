@@ -14,7 +14,9 @@ Worktree separates numbered stage buttons from a category filter dropdown. Stage
 and category selections combine, so a category can be shown within one stage or
 across all stages. Stage buttons wrap into rows, occupy at most
 20% of the viewport height, and then scroll vertically. Filtered graphs keep direct
-external dependencies as smaller cards showing the task name and category. Selecting
+external dependencies as smaller cards showing the task name and category.
+Filtered graphs place selected tasks in the upper half and external dependencies
+in the lower half, separated by a horizontal line. Selecting
 a reference card opens its details without leaving the filter.
 
 The browser is read-only. Selection and camera position are remembered locally;

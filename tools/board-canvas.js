@@ -47,6 +47,21 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
     world.style.width = `${graph.width}px`;
     world.style.height = `${graph.height}px`;
     query('[data-map-count]').textContent = `${graph.nodes.size} tasks · ${graph.edges.length} links`;
+    if (graph.divider !== null) {
+      const line = svg('line');
+      line.setAttribute('x1', 0); line.setAttribute('x2', graph.width);
+      line.setAttribute('y1', graph.divider); line.setAttribute('y2', graph.divider);
+      line.setAttribute('class', 'map-divider');
+      edges.append(line);
+      mini.insertBefore(line.cloneNode(), miniView);
+      for (const [text, y] of [['Selected tasks', 24], ['External dependencies', graph.divider + 24]]) {
+        const label = svg('text');
+        label.textContent = text;
+        label.setAttribute('x', 48); label.setAttribute('y', y);
+        label.setAttribute('class', 'map-lane-label');
+        edges.append(label);
+      }
+    }
     for (const edge of graph.edges) {
       const route = svg('g'), clearance = svg('path'), path = svg('path');
       clearance.setAttribute('d', edge.path);

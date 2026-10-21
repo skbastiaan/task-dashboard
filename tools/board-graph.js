@@ -15,11 +15,21 @@ function buildBoardGraph(board, minimumHeight = 108) {
   const levels = Array.from({length: Math.max(-1, ...ranks.values()) + 1}, () => []);
   board.tasks.forEach(task => levels[ranks.get(task.id)].push(task));
   levels.forEach(tasks => tasks.sort((a, b) => a.id.localeCompare(b.id)));
-  const rows = Math.max(1, ...levels.map(tasks => tasks.length));
+  const halfRows = Math.max(1, ...levels.flatMap(tasks => [
+    tasks.filter(task => !task.external).length, tasks.filter(task => task.external).length]));
+  const rows = board.split ? halfRows * 2 : Math.max(1, ...levels.map(tasks => tasks.length));
   const slots = new Map(), dependents = new Map(board.tasks.map(task => [task.id, []]));
   board.tasks.forEach(task => task.depends_on.forEach(id => dependents.get(id).push(task.id)));
-  const assignSlots = tasks => tasks.forEach((task, index) =>
-    slots.set(task.id, Math.floor((rows - tasks.length) / 2) + index));
+  const assignSlots = tasks => {
+    if (!board.split) {
+      tasks.forEach((task, index) => slots.set(task.id, Math.floor((rows - tasks.length) / 2) + index));
+      return;
+    }
+    for (const external of [false, true]) {
+      tasks.filter(task => !!task.external === external).forEach((task, index) =>
+        slots.set(task.id, (external ? halfRows : 0) + index));
+    }
+  };
   levels.forEach(assignSlots);
   // Stable neighbour ordering keeps parallel branches near their connections.
   for (let pass = 0; pass < 4; pass++) {
@@ -97,6 +107,14 @@ function buildBoardGraph(board, minimumHeight = 108) {
   });
   const rowY = [inset];
   bandHeights.forEach(gap => rowY.push(rowY.at(-1) + height + staggerHeight + gap));
+  let divider = null;
+  if (board.split) {
+    // Equal-height lanes keep the divider at the canvas midpoint. Routing gaps
+    // remain part of their original rows, so horizontal links avoid all cards.
+    const lowerStart = rowY[halfRows];
+    divider = Math.max(lowerStart - inset, rowY.at(-1) - lowerStart) + inset;
+    for (let row = halfRows; row < rowY.length; row++) rowY[row] += divider + inset - lowerStart;
+  }
   const nodes = new Map();
   levels.forEach((items, level) => items.forEach(task => nodes.set(task.id, {
     task, x: columnX[level], y: rowY[slots.get(task.id)] + stagger[level % stagger.length],
@@ -119,8 +137,8 @@ function buildBoardGraph(board, minimumHeight = 108) {
     }
     edge.path = edge.points.map(([x, y], index) => `${index ? 'L' : 'M'} ${x} ${y}`).join(' ');
   }
-  return {nodes, edges, layout: `dependency-tags-v3-${height}`,
-    width: Math.max(392, columnX.at(-1)), height: Math.max(300, rowY.at(-1))};
+  return {nodes, edges, divider, layout: `dependency-lanes-v4-${height}-${board.split ? "split" : "all"}`,
+    width: Math.max(392, columnX.at(-1)), height: divider === null ? Math.max(300, rowY.at(-1)) : divider * 2};
 }
 
 /* Scope projections retain only direct links touching a member of the selection. */
@@ -133,7 +151,7 @@ function projectBoardScope(board, scope) {
   for (const task of board.tasks) for (const dep of task.depends_on) {
     if (members.has(task.id) || members.has(dep)) { included.add(task.id); included.add(dep); }
   }
-  return {...board, tasks: board.tasks.filter(task => included.has(task.id)).map(task => ({
+  return {...board, split: stage !== 'all' || category !== 'all', tasks: board.tasks.filter(task => included.has(task.id)).map(task => ({
     ...task, external: !members.has(task.id),
     depends_on: task.depends_on.filter(dep => included.has(dep) && (members.has(task.id) || members.has(dep)))
   }))};

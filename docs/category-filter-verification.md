@@ -29,3 +29,15 @@ Passed: eight sample stage/category combinations, correct membership and boundar
 edges, immutable input, legacy scope decoding, tools/check.py, HTTP assets and
 embedded-script syntax. Local source verification covered 296 combinations.
 Browser visual verification remains not run under the previously recorded block.
+
+## Divided dependency lanes
+
+Filtered canvases now have equal upper/lower halves, with selected tasks above
+and compact external dependencies below a labeled horizontal divider. The overview
+also shows the divider. Unfiltered all-task layout remains unsplit. Camera layout
+version was advanced to discard stale positions after geometry changes.
+
+Passed: eight sample scope layouts and 40 links; midpoint divider, node bounds,
+correct membership halves, attached ports and no edges crossing another card.
+Equivalent private-local diagnostics covered 296 scopes and 4424 links.
+Static checks pass; desktop/mobile visual checks remain not run.
