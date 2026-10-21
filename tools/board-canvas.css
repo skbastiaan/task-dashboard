@@ -16,7 +16,7 @@
 #task-dashboard .map-edge-clearance { stroke: var(--ci-canvas); stroke-width: 6; fill: none; stroke-linejoin: round; }
 #task-dashboard .map-edge { stroke: var(--ci-line-strong); stroke-width: 1; fill: none; opacity: .3; }
 #task-dashboard .map-edge.is-related { stroke: var(--ci-focus); stroke-width: 2; opacity: 1; }
-#task-dashboard .map-node { position: absolute; display: flex; flex-direction: column; gap: 6px; padding: 9px; border-left: 4px solid var(--ci-line-strong); cursor: pointer; user-select: none; }
+#task-dashboard .map-node { position: absolute; display: flex; flex-direction: column; gap: 6px; padding: 9px; border-left: 4px solid var(--ci-line-strong); cursor: grab; user-select: none; }
 #task-dashboard .map-node[data-status="done"] { border-left-color: var(--ci-success); }
 #task-dashboard .map-node[data-status="active"] { border-left-color: var(--ci-warning); }
 #task-dashboard .map-node[data-status="blocked"] { border-left-color: var(--ci-danger); }
@@ -62,3 +62,6 @@
 
 #task-dashboard .map-divider { stroke: var(--ci-line-strong); stroke-width: 2; vector-effect: non-scaling-stroke; }
 #task-dashboard .map-lane-label { fill: var(--ci-muted); font-size: 14px; font-family: var(--ci-font); }
+
+#task-dashboard .map-viewport, #task-dashboard .map-viewport * { user-select: none; -webkit-user-drag: none; }
+#task-dashboard .map-viewport.is-panning * { cursor: grabbing; }

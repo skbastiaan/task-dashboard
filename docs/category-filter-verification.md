@@ -41,3 +41,16 @@ Passed: eight sample scope layouts and 40 links; midpoint divider, node bounds,
 correct membership halves, attached ports and no edges crossing another card.
 Equivalent private-local diagnostics covered 296 scopes and 4424 links.
 Static checks pass; desktop/mobile visual checks remain not run.
+
+## Canvas-owned dragging
+
+Pointer capture belongs only to the viewport, including drags originating on
+cards or labels. Native dragging and text selection are prevented in the canvas.
+Stationary primary clicks select a task; dragging, cancellation and multi-pointer
+gestures do not select one. Keyboard button activation remains native.
+
+Passed: external mocked-handler diagnostic for card/background pan deltas,
+stationary clicks, pointer cancellation, multi-pointer suppression, keyboard
+passthrough and dragstart prevention in both copies. This is source-event logic
+evidence, not browser verification. Static checks pass. Actual browser dragging
+and touch interaction remain not run under the recorded URL policy block.

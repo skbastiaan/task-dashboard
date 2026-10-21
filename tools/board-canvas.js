@@ -182,7 +182,7 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
     button.addEventListener('click', () => { actions[button.dataset.mapAction](); save(); });
   });
   const pointers = new Map();
-  let gesture = null;
+  let gesture = null, pressedTask = null, clickReady = false;
   const point = event => {
     const rect = viewport.getBoundingClientRect();
     return {x: event.clientX - rect.left, y: event.clientY - rect.top};
@@ -197,11 +197,19 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
   viewport.addEventListener('pointerdown', event => {
     if (event.button !== 0 && event.button !== 1) return;
     if (event.target.closest('[data-minimap]')) return;
-    if (pointers.size === 0) suppressClick = false;
+    event.preventDefault();
+    if (pointers.size === 0) {
+      viewport.focus({preventScroll: true});
+      suppressClick = false;
+      clickReady = false;
+      pressedTask = event.button === 0 ? event.target.closest('.map-node')?.dataset.taskId : null;
+    } else {
+      suppressClick = true;
+      pressedTask = null;
+    }
     pointers.set(event.pointerId, point(event));
     viewport.setPointerCapture(event.pointerId);
-    // Capture on the originating node preserves normal node click targeting.
-    event.target.closest('.map-node')?.setPointerCapture(event.pointerId);
+    // The canvas owns every gesture, even when it begins on a card or label.
     baseline();
   });
   viewport.addEventListener('pointermove', event => {
@@ -225,17 +233,27 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
   });
   const release = event => {
     if (!pointers.delete(event.pointerId)) return;
+    clickReady = event.type === 'pointerup' && !suppressClick && pointers.size === 0;
+    if (event.type !== 'pointerup') { suppressClick = true; pressedTask = null; }
     baseline();
     if (!pointers.size) { viewport.classList.remove('is-panning'); save(); }
   };
   viewport.addEventListener('pointerup', release);
   viewport.addEventListener('pointercancel', release);
   viewport.addEventListener('lostpointercapture', release);
+  viewport.addEventListener('dragstart', event => event.preventDefault());
   viewport.addEventListener('click', event => {
-    if (!suppressClick || event.detail === 0) return;
+    // Keyboard activation retains the button's ordinary click handler.
+    if (event.detail === 0 && !event.pointerType) return;
     event.preventDefault();
     event.stopPropagation();
-    suppressClick = false;
+    const id = clickReady && !suppressClick ? pressedTask : null;
+    pressedTask = null;
+    clickReady = false;
+    if (id) {
+      selectTask(id);
+      buttons.get(id)?.focus({preventScroll: true});
+    }
   }, true);
   let wheelTimer;
   viewport.addEventListener('wheel', event => {
