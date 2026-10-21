@@ -49,3 +49,13 @@
 @media (pointer: coarse) {
   #task-dashboard .map-toolbar button { min-height: 44px; min-width: 44px; }
 }
+
+#task-dashboard .category-tabs { display: flex; flex-wrap: wrap; gap: 4px; max-height: 20vh; overflow-y: auto; overflow-x: hidden; align-content: flex-start; padding: 4px; box-sizing: border-box; }
+#task-dashboard .category-tabs[hidden], #task-dashboard .flow-scope-control[hidden] { display: none; }
+#task-dashboard .category-tabs button { flex: 0 1 auto; min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+#task-dashboard .category-tabs button[aria-pressed="true"] { background: var(--ci-accent); }
+#task-dashboard .flow-scope-control { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+#task-dashboard .flow-scope-control select { max-width: 100%; min-width: 0; padding: 6px; color: var(--ci-text); background: var(--ci-panel); border: 1px solid var(--ci-line); }
+#task-dashboard .map-node.is-external { padding: 8px; border-style: dashed; }
+#task-dashboard .map-node.is-external .map-node-title { font-size: 12px; -webkit-line-clamp: 2; }
+#task-dashboard .map-node.is-external .task-tags { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: var(--ci-muted); }

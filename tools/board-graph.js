@@ -56,7 +56,9 @@ function buildBoardGraph(board, minimumHeight = 108) {
   const degree = Math.max(1, ...tasks.map(task => Math.max(
     incoming.get(task.id).length, outgoing.get(task.id).length)));
   const height = Math.max(minimumHeight, (degree - 1) * portStep + 28);
-  const portSlots = Math.floor((height - 28) / portStep) + 1;
+  const nodeHeight = task => task.external
+    ? Math.max(76, (Math.max(incoming.get(task.id).length, outgoing.get(task.id).length) - 1) * portStep + 28)
+    : height;
   const columnX = [inset], rail = new Map();
   for (let level = 0; level < levels.length; level++) {
     const gutter = gutters[level];
@@ -67,7 +69,8 @@ function buildBoardGraph(board, minimumHeight = 108) {
     columnX.push(columnX[level] + width + Math.max(144, 64 + routes.length * trackStep));
   }
   const port = (links, endpoint) => {
-    for (const list of links.values()) {
+    for (const [id, list] of links) {
+      const portSlots = Math.floor((nodeHeight(byId.get(id)) - 28) / portStep) + 1;
       const other = endpoint === 'from' ? 'to' : 'from';
       list.sort((a, b) => slots.get(a[other]) - slots.get(b[other])
         || ranks.get(a[other]) - ranks.get(b[other]) || key(a).localeCompare(key(b)));
@@ -97,11 +100,11 @@ function buildBoardGraph(board, minimumHeight = 108) {
   const nodes = new Map();
   levels.forEach((items, level) => items.forEach(task => nodes.set(task.id, {
     task, x: columnX[level], y: rowY[slots.get(task.id)] + stagger[level % stagger.length],
-    width, height, level, slot: slots.get(task.id)
+    width: task.external ? 180 : width, height: nodeHeight(task), level, slot: slots.get(task.id)
   })));
   for (const edge of edges) {
     const from = nodes.get(edge.from), to = nodes.get(edge.to);
-    const x1 = from.x + width, y1 = from.y + edge.fromOffset;
+    const x1 = from.x + from.width, y1 = from.y + edge.fromOffset;
     const x2 = to.x, y2 = to.y + edge.toOffset;
     const exit = rail.get(`${from.level}:${key(edge)}`);
     const entry = rail.get(`${to.level - 1}:${key(edge)}`);
@@ -118,4 +121,55 @@ function buildBoardGraph(board, minimumHeight = 108) {
   }
   return {nodes, edges, layout: `dependency-tags-v3-${height}`,
     width: Math.max(392, columnX.at(-1)), height: Math.max(300, rowY.at(-1))};
+}
+
+/* Scope projections retain only direct links touching a member of the selection. */
+function projectBoardScope(board, scope) {
+  const members = new Set(board.tasks.filter(task => scope === 'all'
+    || scope === `phase:${task.phase}`
+    || (task.tags || []).some(tag => scope === `tag:${tag.toLowerCase()}`)).map(task => task.id));
+  const included = new Set(members);
+  for (const task of board.tasks) for (const dep of task.depends_on) {
+    if (members.has(task.id) || members.has(dep)) { included.add(task.id); included.add(dep); }
+  }
+  return {...board, tasks: board.tasks.filter(task => included.has(task.id)).map(task => ({
+    ...task, external: !members.has(task.id),
+    depends_on: task.depends_on.filter(dep => included.has(dep) && (members.has(task.id) || members.has(dep)))
+  }))};
+}
+
+function createBoardScopes({root, board, saved, change}) {
+  const select = root.querySelector('[data-flow-scope]');
+  const tabs = root.querySelector('[data-category-tabs]');
+  const options = new Map([['all', 'All tasks']]);
+  const tags = new Map();
+  board.tasks.forEach(task => (task.tags || []).forEach(tag => tags.set(tag.toLowerCase(), tag)));
+  [...tags].sort((a, b) => a[0].localeCompare(b[0])).forEach(([id, tag]) => options.set(`tag:${id}`, tag));
+  board.phases.forEach(phase => options.set(`phase:${phase.id}`, `${phase.id} · ${phase.title}`));
+  let flowScope = options.has(saved.flowScope) ? saved.flowScope : 'task';
+  let worktreeScope = options.has(saved.worktreeScope) ? saved.worktreeScope : 'all';
+  select.append(new Option('Selected task', 'task'));
+  for (const [value, label] of options) {
+    select.append(new Option(label, value));
+    const button = document.createElement('button');
+    button.type = 'button'; button.textContent = label;
+    button.dataset.scope = value;
+    button.addEventListener('click', () => { worktreeScope = value; change(); });
+    tabs.append(button);
+  }
+  select.addEventListener('change', () => { flowScope = select.value; change(); });
+  return {
+    state: () => ({flowScope, worktreeScope}),
+    restore(state) {
+      if (state.flowScope === 'task' || options.has(state.flowScope)) flowScope = state.flowScope;
+      if (options.has(state.worktreeScope)) worktreeScope = state.worktreeScope;
+    },
+    sync(view) {
+      select.value = flowScope;
+      select.parentElement.hidden = view !== 'flow';
+      tabs.hidden = view !== 'worktree';
+      for (const button of tabs.children) button.setAttribute('aria-pressed', String(button.dataset.scope === worktreeScope));
+      return view === 'worktree' ? worktreeScope : flowScope;
+    }
+  };
 }

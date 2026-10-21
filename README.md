@@ -4,11 +4,16 @@ A reusable, Git-backed task dashboard with a Python CLI and no runtime dependenc
 Open a snapshot offline, or run a local server that refreshes as your ledger changes.
 
 - **Worktree:** zoomable dependency map with pan, fit, minimap and task details.
-- **Flowchart:** prerequisites and dependents for the selected task.
+- **Flowchart:** selected-task connections, or a whole category or phase list.
 - **Task list:** browse phases, owners, tags, acceptance, evidence and review.
 - **Task lifecycle:** dependency checks, named ownership, writer locking and
   evidence-gated completion.
 - **Portable briefs:** copy a selected task's context into your preferred tool.
+
+Worktree includes category and phase subtabs. Buttons wrap into rows, occupy at most
+20% of the viewport height, and then scroll vertically. Filtered graphs keep direct
+external dependencies as smaller cards showing the task name and category. Selecting
+a reference card opens its details without leaving the filter.
 
 The browser is read-only. Selection and camera position are remembered locally;
 they do not change task status. The JSON ledger remains the source of truth.

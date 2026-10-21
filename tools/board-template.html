@@ -32,6 +32,9 @@
     <button type="button" class="cursor-interaction" data-view="flow">Flowchart</button>
     <button type="button" class="cursor-interaction" data-view="list">Task list</button>
   </div>
+  <label class="flow-scope-control">Flowchart selection
+    <select data-flow-scope aria-label="Flowchart selection"></select>
+  </label>
   <section data-flow aria-label="Selected task dependency flowchart">
     <h2>Task dependencies</h2>
     <p class="metro-small metro-muted">Prerequisites → selected task → dependent tasks. Select a tile to follow its connections.</p>
@@ -44,6 +47,7 @@
   </section>
   <div class="board-workspace" data-workspace>
     <section class="map-panel" data-worktree aria-label="Worktree: all task dependencies" hidden>
+      <div class="category-tabs" data-category-tabs role="group" aria-label="Worktree categories"></div>
       <div class="map-toolbar" role="group" aria-label="Canvas controls">
         <span class="map-count" data-map-count></span>
         <button type="button" data-map-action="out" aria-label="Zoom out">−</button>
@@ -154,6 +158,8 @@
       let viewMode = ["flow", "list", "worktree"].includes(requestedView) ? requestedView
         : ["flow", "list", "worktree"].includes(saved.viewMode) ? saved.viewMode : "flow";
       let taskMap;
+      const scopes = createBoardScopes({root, board, saved,
+        change: () => { render(); saveState(); }});
       const firstReady = board.tasks.find(task => shownStatus(task) === "ready");
       const firstTask = firstReady || board.tasks[0];
       const selectionFor = state => {
@@ -193,7 +199,7 @@
           .join(" · ") || "No tasks";
       };
       const saveState = () => {
-        const state = { selectedTaskId, selectedPhaseId, viewMode, camera: taskMap?.state() };
+        const state = { selectedTaskId, selectedPhaseId, viewMode, ...scopes.state(), camera: taskMap?.state() };
         try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch {}
         if (typeof window.openai?.setWidgetState === "function") {
           window.openai.setWidgetState({modelContent: {selectedTaskId, selectedPhaseId, viewMode},
@@ -401,9 +407,11 @@
       };
 
       const render = () => {
-        root.classList.toggle('is-worktree', viewMode === 'worktree');
-        query('[data-worktree]').hidden = viewMode !== 'worktree';
-        query("[data-flow]").hidden = viewMode !== "flow";
+        const scope = scopes.sync(viewMode);
+        const canvas = viewMode === 'worktree' || (viewMode === 'flow' && scope !== 'task');
+        root.classList.toggle('is-worktree', canvas);
+        query('[data-worktree]').hidden = !canvas;
+        query("[data-flow]").hidden = viewMode !== "flow" || canvas;
         query("[data-list-panel]").hidden = viewMode !== "list";
         query("[data-workspace]").style.gridTemplateColumns = viewMode === "flow" ? "1fr" : "";
         all("[data-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.view === viewMode)));
@@ -411,7 +419,7 @@
         renderTasks();
         renderFlow();
         renderDetail();
-        taskMap?.show(selectedTaskId);
+        if (canvas) taskMap?.show(selectedTaskId, scope);
       };
       all("[data-view]").forEach(button => button.addEventListener("click", () => {
         viewMode = button.dataset.view;
@@ -456,9 +464,11 @@
         const state = event.detail?.globals?.widgetState?.privateContent;
         if (!state || typeof state !== "object") return;
         if (["flow", "list", "worktree"].includes(state.viewMode)) viewMode = state.viewMode;
-        taskMap?.restore(state.camera);
+        scopes.restore(state);
         ({selectedTaskId, selectedPhaseId} = selectionFor(state));
         render();
+        taskMap?.restore(state.camera);
+        taskMap?.show(selectedTaskId);
       });
 
       taskMap = createBoardCanvas({root, board, shownStatus, tagChip, saved: saved.camera, save: saveState,

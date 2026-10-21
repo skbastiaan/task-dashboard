@@ -1,5 +1,6 @@
 /* Canvas interaction is presentation-only; it never writes task status. */
 function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save, saved}) {
+  const originals = new Map(board.tasks.map(task => [task.id, task]));
   const query = selector => root.querySelector(selector);
   const panel = query('[data-worktree]'), viewport = query('[data-map-viewport]');
   const world = query('[data-map-world]'), edges = query('[data-map-edges]');
@@ -15,82 +16,99 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
     tagHeight = Math.max(tagHeight, measure.getBoundingClientRect().height);
   }
   measure.remove();
-  const graph = buildBoardGraph(board, Math.ceil(108 + tagHeight)), buttons = new Map(), paths = [];
-  const minZoom = Math.min(.08, 160 / Math.max(graph.width, graph.height));
+  let scope = null, graph, minZoom;
+  const buttons = new Map(), paths = [];
   const svg = name => document.createElementNS('http://www.w3.org/2000/svg', name);
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   let camera = null, selected = null, expanded = false, suppressClick = false;
   const valid = value => value && [value.x, value.y, value.zoom].every(Number.isFinite);
   const restore = value => {
+    const target = value?.scope;
+    const known = target === 'all' || board.phases.some(phase => target === `phase:${phase.id}`)
+      || board.tasks.some(task => (task.tags || []).some(tag => target === `tag:${tag.toLowerCase()}`));
+    if (known && target !== scope) rebuild(target);
     camera = valid(value) && value.layout === graph.layout
       ? {x: value.x, y: value.y, zoom: clamp(value.zoom, minZoom, 2.5)} : null;
   };
-  restore(saved);
-  world.style.width = `${graph.width}px`;
-  world.style.height = `${graph.height}px`;
-  query('[data-map-count]').textContent = `${graph.nodes.size} tasks · ${graph.edges.length} links`;
-  for (const edge of graph.edges) {
-    const route = svg('g'), clearance = svg('path'), path = svg('path');
-    clearance.setAttribute('d', edge.path);
-    clearance.setAttribute('class', 'map-edge-clearance');
-    path.setAttribute('d', edge.path);
-    path.setAttribute('class', 'map-edge');
-    path.setAttribute('marker-end', 'url(#board-map-arrow)');
-    path.dataset.from = edge.from;
-    path.dataset.to = edge.to;
-    route.append(clearance, path);
-    edges.append(route);
-    paths.push({edge, path, route});
-  }
   const hideTooltip = () => { tooltip.hidden = true; };
   const showTooltip = button => {
     tooltip.textContent = button.getAttribute('aria-label');
     tooltip.hidden = false;
   };
-  for (const node of graph.nodes.values()) {
-    const {task} = node, status = shownStatus(task);
-    const button = document.createElement('button'), head = document.createElement('span');
-    const id = document.createElement('strong'), state = document.createElement('span');
-    const title = document.createElement('span');
-    button.type = 'button';
-    button.className = 'map-node cursor-interaction';
-    button.dataset.taskId = task.id;
-    button.dataset.level = node.level;
-    button.dataset.status = status;
-    button.setAttribute('aria-label', `${task.id}: ${task.title}; ${task.phase}; ${status}; ${(task.tags || []).join(', ')}`);
-    button.setAttribute('aria-describedby', 'board-map-tooltip');
-    Object.assign(button.style, {left: `${node.x}px`, top: `${node.y}px`,
-      width: `${node.width}px`, height: `${node.height}px`});
-    head.className = 'map-node-head';
-    id.textContent = task.id;
-    state.textContent = status;
-    head.append(id, state);
-    title.className = 'map-node-title';
-    title.textContent = task.title;
-    button.append(head, title);
-    const tags = document.createElement('span');
-    tags.className = 'task-tags';
-    tags.append(...(task.tags || []).map(tagChip));
-    button.append(tags);
-    button.addEventListener('click', () => selectTask(task.id));
-    button.addEventListener('pointerenter', () => showTooltip(button));
-    button.addEventListener('pointerleave', hideTooltip);
-    button.addEventListener('focus', () => {
-      showTooltip(button);
-      if (!camera) return;
-      const rect = button.getBoundingClientRect(), bounds = viewport.getBoundingClientRect();
-      if (rect.left < bounds.left || rect.right > bounds.right || rect.top < bounds.top || rect.bottom > bounds.bottom) {
-        focusTask(task.id);
-      }
-    });
-    button.addEventListener('blur', hideTooltip);
-    world.append(button);
-    buttons.set(task.id, button);
-    const mark = svg('rect');
-    for (const key of ['x', 'y', 'width', 'height']) mark.setAttribute(key, node[key]);
-    mini.insertBefore(mark, miniView);
-  }
-  mini.setAttribute('viewBox', `0 0 ${graph.width} ${graph.height}`);
+  const rebuild = next => {
+    scope = next;
+    graph = buildBoardGraph(projectBoardScope(board, scope), Math.ceil(108 + tagHeight));
+    graph.layout += `:${scope}`;
+    minZoom = Math.min(.08, 160 / Math.max(graph.width, graph.height));
+    buttons.forEach(button => button.remove()); buttons.clear(); paths.length = 0;
+    edges.replaceChildren(); mini.replaceChildren(miniView); hideTooltip();
+    world.style.width = `${graph.width}px`;
+    world.style.height = `${graph.height}px`;
+    query('[data-map-count]').textContent = `${graph.nodes.size} tasks · ${graph.edges.length} links`;
+    for (const edge of graph.edges) {
+      const route = svg('g'), clearance = svg('path'), path = svg('path');
+      clearance.setAttribute('d', edge.path);
+      clearance.setAttribute('class', 'map-edge-clearance');
+      path.setAttribute('d', edge.path);
+      path.setAttribute('class', 'map-edge');
+      path.setAttribute('marker-end', 'url(#board-map-arrow)');
+      path.dataset.from = edge.from;
+      path.dataset.to = edge.to;
+      route.append(clearance, path);
+      edges.append(route);
+      paths.push({edge, path, route});
+    }
+    for (const node of graph.nodes.values()) {
+      const {task} = node, status = shownStatus(originals.get(task.id));
+      const button = document.createElement('button'), head = document.createElement('span');
+      const id = document.createElement('strong'), state = document.createElement('span');
+      const title = document.createElement('span');
+      button.type = 'button';
+      button.className = 'map-node cursor-interaction';
+      button.dataset.taskId = task.id;
+      button.dataset.level = node.level;
+      button.dataset.status = status;
+      button.setAttribute('aria-label', `${task.id}: ${task.title}; ${task.phase}; ${status}; ${(task.tags || []).join(', ')}`);
+      button.setAttribute('aria-describedby', 'board-map-tooltip');
+      Object.assign(button.style, {left: `${node.x}px`, top: `${node.y}px`,
+        width: `${node.width}px`, height: `${node.height}px`});
+      head.className = 'map-node-head';
+      id.textContent = task.id;
+      state.textContent = status;
+      head.append(id, state);
+      title.className = 'map-node-title';
+      title.textContent = task.title;
+      if (!task.external) button.append(head);
+      button.append(title);
+      button.classList.toggle('is-external', !!task.external);
+      const tags = document.createElement('span');
+      tags.className = 'task-tags';
+      if (task.external) tags.textContent = (task.tags || [task.phase]).join(' · ');
+      else tags.append(...(task.tags || []).map(tagChip));
+      button.append(tags);
+      button.addEventListener('click', () => selectTask(task.id));
+      button.addEventListener('pointerenter', () => showTooltip(button));
+      button.addEventListener('pointerleave', hideTooltip);
+      button.addEventListener('focus', () => {
+        showTooltip(button);
+        if (!camera) return;
+        const rect = button.getBoundingClientRect(), bounds = viewport.getBoundingClientRect();
+        if (rect.left < bounds.left || rect.right > bounds.right || rect.top < bounds.top || rect.bottom > bounds.bottom) {
+          focusTask(task.id);
+        }
+      });
+      button.addEventListener('blur', hideTooltip);
+      world.append(button);
+      buttons.set(task.id, button);
+      const mark = svg('rect');
+      for (const key of ['x', 'y', 'width', 'height']) mark.setAttribute(key, node[key]);
+      mini.insertBefore(mark, miniView);
+    }
+    mini.setAttribute('viewBox', `0 0 ${graph.width} ${graph.height}`);
+    camera = null;
+  };
+  rebuild(saved?.scope || 'all');
+  restore(saved);
   const paint = () => {
     if (!camera || panel.hidden) return;
     camera.x = clamp(camera.x, 0, graph.width);
@@ -237,7 +255,7 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
       if (expanded) { expand(); query('[data-map-action="expand"]').focus(); }
       return;
     }
-    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.ctrlKey || event.metaKey || event.altKey || event.target.closest('[data-category-tabs]')) return;
     const moves = {ArrowLeft: [-80, 0], ArrowRight: [80, 0], ArrowUp: [0, -80], ArrowDown: [0, 80]};
     if (moves[event.key]) {
       const [x, y] = moves[event.key];
@@ -258,9 +276,10 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
   });
   new ResizeObserver(() => { if (!panel.hidden) camera ? paint() : fit(); }).observe(viewport);
   return {
-    state: () => camera ? {...camera, layout: graph.layout} : null,
+    state: () => camera ? {...camera, layout: graph.layout, scope} : null,
     restore,
-    show(id) {
+    show(id, next = scope) {
+      if (next !== scope) rebuild(next);
       selected = id;
       query('[data-map-action="selected"]').disabled = !graph.nodes.has(id);
       const related = new Set();

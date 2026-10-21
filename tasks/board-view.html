@@ -191,6 +191,16 @@
   #task-dashboard .map-toolbar button { min-height: 44px; min-width: 44px; }
 }
 
+#task-dashboard .category-tabs { display: flex; flex-wrap: wrap; gap: 4px; max-height: 20vh; overflow-y: auto; overflow-x: hidden; align-content: flex-start; padding: 4px; box-sizing: border-box; }
+#task-dashboard .category-tabs[hidden], #task-dashboard .flow-scope-control[hidden] { display: none; }
+#task-dashboard .category-tabs button { flex: 0 1 auto; min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+#task-dashboard .category-tabs button[aria-pressed="true"] { background: var(--ci-accent); }
+#task-dashboard .flow-scope-control { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+#task-dashboard .flow-scope-control select { max-width: 100%; min-width: 0; padding: 6px; color: var(--ci-text); background: var(--ci-panel); border: 1px solid var(--ci-line); }
+#task-dashboard .map-node.is-external { padding: 8px; border-style: dashed; }
+#task-dashboard .map-node.is-external .map-node-title { font-size: 12px; -webkit-line-clamp: 2; }
+#task-dashboard .map-node.is-external .task-tags { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: var(--ci-muted); }
+
   </style>
 
   <div class="board-header">
@@ -221,6 +231,9 @@
     <button type="button" class="cursor-interaction" data-view="flow">Flowchart</button>
     <button type="button" class="cursor-interaction" data-view="list">Task list</button>
   </div>
+  <label class="flow-scope-control">Flowchart selection
+    <select data-flow-scope aria-label="Flowchart selection"></select>
+  </label>
   <section data-flow aria-label="Selected task dependency flowchart">
     <h2>Task dependencies</h2>
     <p class="metro-small metro-muted">Prerequisites → selected task → dependent tasks. Select a tile to follow its connections.</p>
@@ -233,6 +246,7 @@
   </section>
   <div class="board-workspace" data-workspace>
     <section class="map-panel" data-worktree aria-label="Worktree: all task dependencies" hidden>
+      <div class="category-tabs" data-category-tabs role="group" aria-label="Worktree categories"></div>
       <div class="map-toolbar" role="group" aria-label="Canvas controls">
         <span class="map-count" data-map-count></span>
         <button type="button" data-map-action="out" aria-label="Zoom out">−</button>
@@ -382,7 +396,9 @@ function buildBoardGraph(board, minimumHeight = 108) {
   const degree = Math.max(1, ...tasks.map(task => Math.max(
     incoming.get(task.id).length, outgoing.get(task.id).length)));
   const height = Math.max(minimumHeight, (degree - 1) * portStep + 28);
-  const portSlots = Math.floor((height - 28) / portStep) + 1;
+  const nodeHeight = task => task.external
+    ? Math.max(76, (Math.max(incoming.get(task.id).length, outgoing.get(task.id).length) - 1) * portStep + 28)
+    : height;
   const columnX = [inset], rail = new Map();
   for (let level = 0; level < levels.length; level++) {
     const gutter = gutters[level];
@@ -393,7 +409,8 @@ function buildBoardGraph(board, minimumHeight = 108) {
     columnX.push(columnX[level] + width + Math.max(144, 64 + routes.length * trackStep));
   }
   const port = (links, endpoint) => {
-    for (const list of links.values()) {
+    for (const [id, list] of links) {
+      const portSlots = Math.floor((nodeHeight(byId.get(id)) - 28) / portStep) + 1;
       const other = endpoint === 'from' ? 'to' : 'from';
       list.sort((a, b) => slots.get(a[other]) - slots.get(b[other])
         || ranks.get(a[other]) - ranks.get(b[other]) || key(a).localeCompare(key(b)));
@@ -423,11 +440,11 @@ function buildBoardGraph(board, minimumHeight = 108) {
   const nodes = new Map();
   levels.forEach((items, level) => items.forEach(task => nodes.set(task.id, {
     task, x: columnX[level], y: rowY[slots.get(task.id)] + stagger[level % stagger.length],
-    width, height, level, slot: slots.get(task.id)
+    width: task.external ? 180 : width, height: nodeHeight(task), level, slot: slots.get(task.id)
   })));
   for (const edge of edges) {
     const from = nodes.get(edge.from), to = nodes.get(edge.to);
-    const x1 = from.x + width, y1 = from.y + edge.fromOffset;
+    const x1 = from.x + from.width, y1 = from.y + edge.fromOffset;
     const x2 = to.x, y2 = to.y + edge.toOffset;
     const exit = rail.get(`${from.level}:${key(edge)}`);
     const entry = rail.get(`${to.level - 1}:${key(edge)}`);
@@ -446,8 +463,60 @@ function buildBoardGraph(board, minimumHeight = 108) {
     width: Math.max(392, columnX.at(-1)), height: Math.max(300, rowY.at(-1))};
 }
 
+/* Scope projections retain only direct links touching a member of the selection. */
+function projectBoardScope(board, scope) {
+  const members = new Set(board.tasks.filter(task => scope === 'all'
+    || scope === `phase:${task.phase}`
+    || (task.tags || []).some(tag => scope === `tag:${tag.toLowerCase()}`)).map(task => task.id));
+  const included = new Set(members);
+  for (const task of board.tasks) for (const dep of task.depends_on) {
+    if (members.has(task.id) || members.has(dep)) { included.add(task.id); included.add(dep); }
+  }
+  return {...board, tasks: board.tasks.filter(task => included.has(task.id)).map(task => ({
+    ...task, external: !members.has(task.id),
+    depends_on: task.depends_on.filter(dep => included.has(dep) && (members.has(task.id) || members.has(dep)))
+  }))};
+}
+
+function createBoardScopes({root, board, saved, change}) {
+  const select = root.querySelector('[data-flow-scope]');
+  const tabs = root.querySelector('[data-category-tabs]');
+  const options = new Map([['all', 'All tasks']]);
+  const tags = new Map();
+  board.tasks.forEach(task => (task.tags || []).forEach(tag => tags.set(tag.toLowerCase(), tag)));
+  [...tags].sort((a, b) => a[0].localeCompare(b[0])).forEach(([id, tag]) => options.set(`tag:${id}`, tag));
+  board.phases.forEach(phase => options.set(`phase:${phase.id}`, `${phase.id} · ${phase.title}`));
+  let flowScope = options.has(saved.flowScope) ? saved.flowScope : 'task';
+  let worktreeScope = options.has(saved.worktreeScope) ? saved.worktreeScope : 'all';
+  select.append(new Option('Selected task', 'task'));
+  for (const [value, label] of options) {
+    select.append(new Option(label, value));
+    const button = document.createElement('button');
+    button.type = 'button'; button.textContent = label;
+    button.dataset.scope = value;
+    button.addEventListener('click', () => { worktreeScope = value; change(); });
+    tabs.append(button);
+  }
+  select.addEventListener('change', () => { flowScope = select.value; change(); });
+  return {
+    state: () => ({flowScope, worktreeScope}),
+    restore(state) {
+      if (state.flowScope === 'task' || options.has(state.flowScope)) flowScope = state.flowScope;
+      if (options.has(state.worktreeScope)) worktreeScope = state.worktreeScope;
+    },
+    sync(view) {
+      select.value = flowScope;
+      select.parentElement.hidden = view !== 'flow';
+      tabs.hidden = view !== 'worktree';
+      for (const button of tabs.children) button.setAttribute('aria-pressed', String(button.dataset.scope === worktreeScope));
+      return view === 'worktree' ? worktreeScope : flowScope;
+    }
+  };
+}
+
 /* Canvas interaction is presentation-only; it never writes task status. */
 function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save, saved}) {
+  const originals = new Map(board.tasks.map(task => [task.id, task]));
   const query = selector => root.querySelector(selector);
   const panel = query('[data-worktree]'), viewport = query('[data-map-viewport]');
   const world = query('[data-map-world]'), edges = query('[data-map-edges]');
@@ -463,82 +532,99 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
     tagHeight = Math.max(tagHeight, measure.getBoundingClientRect().height);
   }
   measure.remove();
-  const graph = buildBoardGraph(board, Math.ceil(108 + tagHeight)), buttons = new Map(), paths = [];
-  const minZoom = Math.min(.08, 160 / Math.max(graph.width, graph.height));
+  let scope = null, graph, minZoom;
+  const buttons = new Map(), paths = [];
   const svg = name => document.createElementNS('http://www.w3.org/2000/svg', name);
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   let camera = null, selected = null, expanded = false, suppressClick = false;
   const valid = value => value && [value.x, value.y, value.zoom].every(Number.isFinite);
   const restore = value => {
+    const target = value?.scope;
+    const known = target === 'all' || board.phases.some(phase => target === `phase:${phase.id}`)
+      || board.tasks.some(task => (task.tags || []).some(tag => target === `tag:${tag.toLowerCase()}`));
+    if (known && target !== scope) rebuild(target);
     camera = valid(value) && value.layout === graph.layout
       ? {x: value.x, y: value.y, zoom: clamp(value.zoom, minZoom, 2.5)} : null;
   };
-  restore(saved);
-  world.style.width = `${graph.width}px`;
-  world.style.height = `${graph.height}px`;
-  query('[data-map-count]').textContent = `${graph.nodes.size} tasks · ${graph.edges.length} links`;
-  for (const edge of graph.edges) {
-    const route = svg('g'), clearance = svg('path'), path = svg('path');
-    clearance.setAttribute('d', edge.path);
-    clearance.setAttribute('class', 'map-edge-clearance');
-    path.setAttribute('d', edge.path);
-    path.setAttribute('class', 'map-edge');
-    path.setAttribute('marker-end', 'url(#board-map-arrow)');
-    path.dataset.from = edge.from;
-    path.dataset.to = edge.to;
-    route.append(clearance, path);
-    edges.append(route);
-    paths.push({edge, path, route});
-  }
   const hideTooltip = () => { tooltip.hidden = true; };
   const showTooltip = button => {
     tooltip.textContent = button.getAttribute('aria-label');
     tooltip.hidden = false;
   };
-  for (const node of graph.nodes.values()) {
-    const {task} = node, status = shownStatus(task);
-    const button = document.createElement('button'), head = document.createElement('span');
-    const id = document.createElement('strong'), state = document.createElement('span');
-    const title = document.createElement('span');
-    button.type = 'button';
-    button.className = 'map-node cursor-interaction';
-    button.dataset.taskId = task.id;
-    button.dataset.level = node.level;
-    button.dataset.status = status;
-    button.setAttribute('aria-label', `${task.id}: ${task.title}; ${task.phase}; ${status}; ${(task.tags || []).join(', ')}`);
-    button.setAttribute('aria-describedby', 'board-map-tooltip');
-    Object.assign(button.style, {left: `${node.x}px`, top: `${node.y}px`,
-      width: `${node.width}px`, height: `${node.height}px`});
-    head.className = 'map-node-head';
-    id.textContent = task.id;
-    state.textContent = status;
-    head.append(id, state);
-    title.className = 'map-node-title';
-    title.textContent = task.title;
-    button.append(head, title);
-    const tags = document.createElement('span');
-    tags.className = 'task-tags';
-    tags.append(...(task.tags || []).map(tagChip));
-    button.append(tags);
-    button.addEventListener('click', () => selectTask(task.id));
-    button.addEventListener('pointerenter', () => showTooltip(button));
-    button.addEventListener('pointerleave', hideTooltip);
-    button.addEventListener('focus', () => {
-      showTooltip(button);
-      if (!camera) return;
-      const rect = button.getBoundingClientRect(), bounds = viewport.getBoundingClientRect();
-      if (rect.left < bounds.left || rect.right > bounds.right || rect.top < bounds.top || rect.bottom > bounds.bottom) {
-        focusTask(task.id);
-      }
-    });
-    button.addEventListener('blur', hideTooltip);
-    world.append(button);
-    buttons.set(task.id, button);
-    const mark = svg('rect');
-    for (const key of ['x', 'y', 'width', 'height']) mark.setAttribute(key, node[key]);
-    mini.insertBefore(mark, miniView);
-  }
-  mini.setAttribute('viewBox', `0 0 ${graph.width} ${graph.height}`);
+  const rebuild = next => {
+    scope = next;
+    graph = buildBoardGraph(projectBoardScope(board, scope), Math.ceil(108 + tagHeight));
+    graph.layout += `:${scope}`;
+    minZoom = Math.min(.08, 160 / Math.max(graph.width, graph.height));
+    buttons.forEach(button => button.remove()); buttons.clear(); paths.length = 0;
+    edges.replaceChildren(); mini.replaceChildren(miniView); hideTooltip();
+    world.style.width = `${graph.width}px`;
+    world.style.height = `${graph.height}px`;
+    query('[data-map-count]').textContent = `${graph.nodes.size} tasks · ${graph.edges.length} links`;
+    for (const edge of graph.edges) {
+      const route = svg('g'), clearance = svg('path'), path = svg('path');
+      clearance.setAttribute('d', edge.path);
+      clearance.setAttribute('class', 'map-edge-clearance');
+      path.setAttribute('d', edge.path);
+      path.setAttribute('class', 'map-edge');
+      path.setAttribute('marker-end', 'url(#board-map-arrow)');
+      path.dataset.from = edge.from;
+      path.dataset.to = edge.to;
+      route.append(clearance, path);
+      edges.append(route);
+      paths.push({edge, path, route});
+    }
+    for (const node of graph.nodes.values()) {
+      const {task} = node, status = shownStatus(originals.get(task.id));
+      const button = document.createElement('button'), head = document.createElement('span');
+      const id = document.createElement('strong'), state = document.createElement('span');
+      const title = document.createElement('span');
+      button.type = 'button';
+      button.className = 'map-node cursor-interaction';
+      button.dataset.taskId = task.id;
+      button.dataset.level = node.level;
+      button.dataset.status = status;
+      button.setAttribute('aria-label', `${task.id}: ${task.title}; ${task.phase}; ${status}; ${(task.tags || []).join(', ')}`);
+      button.setAttribute('aria-describedby', 'board-map-tooltip');
+      Object.assign(button.style, {left: `${node.x}px`, top: `${node.y}px`,
+        width: `${node.width}px`, height: `${node.height}px`});
+      head.className = 'map-node-head';
+      id.textContent = task.id;
+      state.textContent = status;
+      head.append(id, state);
+      title.className = 'map-node-title';
+      title.textContent = task.title;
+      if (!task.external) button.append(head);
+      button.append(title);
+      button.classList.toggle('is-external', !!task.external);
+      const tags = document.createElement('span');
+      tags.className = 'task-tags';
+      if (task.external) tags.textContent = (task.tags || [task.phase]).join(' · ');
+      else tags.append(...(task.tags || []).map(tagChip));
+      button.append(tags);
+      button.addEventListener('click', () => selectTask(task.id));
+      button.addEventListener('pointerenter', () => showTooltip(button));
+      button.addEventListener('pointerleave', hideTooltip);
+      button.addEventListener('focus', () => {
+        showTooltip(button);
+        if (!camera) return;
+        const rect = button.getBoundingClientRect(), bounds = viewport.getBoundingClientRect();
+        if (rect.left < bounds.left || rect.right > bounds.right || rect.top < bounds.top || rect.bottom > bounds.bottom) {
+          focusTask(task.id);
+        }
+      });
+      button.addEventListener('blur', hideTooltip);
+      world.append(button);
+      buttons.set(task.id, button);
+      const mark = svg('rect');
+      for (const key of ['x', 'y', 'width', 'height']) mark.setAttribute(key, node[key]);
+      mini.insertBefore(mark, miniView);
+    }
+    mini.setAttribute('viewBox', `0 0 ${graph.width} ${graph.height}`);
+    camera = null;
+  };
+  rebuild(saved?.scope || 'all');
+  restore(saved);
   const paint = () => {
     if (!camera || panel.hidden) return;
     camera.x = clamp(camera.x, 0, graph.width);
@@ -685,7 +771,7 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
       if (expanded) { expand(); query('[data-map-action="expand"]').focus(); }
       return;
     }
-    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.ctrlKey || event.metaKey || event.altKey || event.target.closest('[data-category-tabs]')) return;
     const moves = {ArrowLeft: [-80, 0], ArrowRight: [80, 0], ArrowUp: [0, -80], ArrowDown: [0, 80]};
     if (moves[event.key]) {
       const [x, y] = moves[event.key];
@@ -706,9 +792,10 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
   });
   new ResizeObserver(() => { if (!panel.hidden) camera ? paint() : fit(); }).observe(viewport);
   return {
-    state: () => camera ? {...camera, layout: graph.layout} : null,
+    state: () => camera ? {...camera, layout: graph.layout, scope} : null,
     restore,
-    show(id) {
+    show(id, next = scope) {
+      if (next !== scope) rebuild(next);
       selected = id;
       query('[data-map-action="selected"]').disabled = !graph.nodes.has(id);
       const related = new Set();
@@ -745,6 +832,8 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
       let viewMode = ["flow", "list", "worktree"].includes(requestedView) ? requestedView
         : ["flow", "list", "worktree"].includes(saved.viewMode) ? saved.viewMode : "flow";
       let taskMap;
+      const scopes = createBoardScopes({root, board, saved,
+        change: () => { render(); saveState(); }});
       const firstReady = board.tasks.find(task => shownStatus(task) === "ready");
       const firstTask = firstReady || board.tasks[0];
       const selectionFor = state => {
@@ -784,7 +873,7 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
           .join(" · ") || "No tasks";
       };
       const saveState = () => {
-        const state = { selectedTaskId, selectedPhaseId, viewMode, camera: taskMap?.state() };
+        const state = { selectedTaskId, selectedPhaseId, viewMode, ...scopes.state(), camera: taskMap?.state() };
         try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch {}
         if (typeof window.openai?.setWidgetState === "function") {
           window.openai.setWidgetState({modelContent: {selectedTaskId, selectedPhaseId, viewMode},
@@ -992,9 +1081,11 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
       };
 
       const render = () => {
-        root.classList.toggle('is-worktree', viewMode === 'worktree');
-        query('[data-worktree]').hidden = viewMode !== 'worktree';
-        query("[data-flow]").hidden = viewMode !== "flow";
+        const scope = scopes.sync(viewMode);
+        const canvas = viewMode === 'worktree' || (viewMode === 'flow' && scope !== 'task');
+        root.classList.toggle('is-worktree', canvas);
+        query('[data-worktree]').hidden = !canvas;
+        query("[data-flow]").hidden = viewMode !== "flow" || canvas;
         query("[data-list-panel]").hidden = viewMode !== "list";
         query("[data-workspace]").style.gridTemplateColumns = viewMode === "flow" ? "1fr" : "";
         all("[data-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.view === viewMode)));
@@ -1002,7 +1093,7 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
         renderTasks();
         renderFlow();
         renderDetail();
-        taskMap?.show(selectedTaskId);
+        if (canvas) taskMap?.show(selectedTaskId, scope);
       };
       all("[data-view]").forEach(button => button.addEventListener("click", () => {
         viewMode = button.dataset.view;
@@ -1047,9 +1138,11 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
         const state = event.detail?.globals?.widgetState?.privateContent;
         if (!state || typeof state !== "object") return;
         if (["flow", "list", "worktree"].includes(state.viewMode)) viewMode = state.viewMode;
-        taskMap?.restore(state.camera);
+        scopes.restore(state);
         ({selectedTaskId, selectedPhaseId} = selectionFor(state));
         render();
+        taskMap?.restore(state.camera);
+        taskMap?.show(selectedTaskId);
       });
 
       taskMap = createBoardCanvas({root, board, shownStatus, tagChip, saved: saved.camera, save: saveState,
