@@ -10,7 +10,9 @@ Open a snapshot offline, or run a local server that refreshes as your ledger cha
   evidence-gated completion.
 - **Portable briefs:** copy a selected task's context into your preferred tool.
 
-Worktree includes category and phase subtabs. Buttons wrap into rows, occupy at most
+Worktree separates numbered stage buttons from a category filter dropdown. Stage
+and category selections combine, so a category can be shown within one stage or
+across all stages. Stage buttons wrap into rows, occupy at most
 20% of the viewport height, and then scroll vertically. Filtered graphs keep direct
 external dependencies as smaller cards showing the task name and category. Selecting
 a reference card opens its details without leaving the filter.

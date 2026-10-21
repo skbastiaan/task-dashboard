@@ -18,3 +18,14 @@ only direct boundary links; external cards show a name and category.
 - No development unit tests or product runtime qualification were added or run.
 
 The browser remains a read-only view. The fictional sample ledger is unchanged.
+
+## Stage and category separation
+
+Numbered stage controls and category tags are now separate. Worktree buttons
+contain stages only; category dropdowns filter both graph views. Stage and category
+filters intersect. Legacy tag-only and stage-only saved selections remain supported.
+
+Passed: eight sample stage/category combinations, correct membership and boundary
+edges, immutable input, legacy scope decoding, tools/check.py, HTTP assets and
+embedded-script syntax. Local source verification covered 296 combinations.
+Browser visual verification remains not run under the previously recorded block.

@@ -32,8 +32,11 @@
     <button type="button" class="cursor-interaction" data-view="flow">Flowchart</button>
     <button type="button" class="cursor-interaction" data-view="list">Task list</button>
   </div>
-  <label class="flow-scope-control">Flowchart selection
-    <select data-flow-scope aria-label="Flowchart selection"></select>
+  <label class="flow-scope-control">Flowchart stage
+    <select data-flow-scope aria-label="Flowchart stage"></select>
+  </label>
+  <label class="flow-scope-control">Category filter
+    <select data-flow-category aria-label="Flowchart category filter"></select>
   </label>
   <section data-flow aria-label="Selected task dependency flowchart">
     <h2>Task dependencies</h2>
@@ -47,7 +50,10 @@
   </section>
   <div class="board-workspace" data-workspace>
     <section class="map-panel" data-worktree aria-label="Worktree: all task dependencies" hidden>
-      <div class="category-tabs" data-category-tabs role="group" aria-label="Worktree categories"></div>
+      <label class="flow-scope-control">Category filter
+        <select data-worktree-category aria-label="Worktree category filter"></select>
+      </label>
+      <div class="category-tabs" data-category-tabs role="group" aria-label="Worktree stages"></div>
       <div class="map-toolbar" role="group" aria-label="Canvas controls">
         <span class="map-count" data-map-count></span>
         <button type="button" data-map-action="out" aria-label="Zoom out">−</button>

@@ -24,8 +24,10 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
   const valid = value => value && [value.x, value.y, value.zoom].every(Number.isFinite);
   const restore = value => {
     const target = value?.scope;
-    const known = target === 'all' || board.phases.some(phase => target === `phase:${phase.id}`)
-      || board.tasks.some(task => (task.tags || []).some(tag => target === `tag:${tag.toLowerCase()}`));
+    const [stage, category] = boardScopeParts(target);
+    const known = typeof target === 'string'
+      && (stage === 'all' || board.phases.some(phase => stage === `phase:${phase.id}`))
+      && (category === 'all' || board.tasks.some(task => (task.tags || []).some(tag => category === `tag:${tag.toLowerCase()}`)));
     if (known && target !== scope) rebuild(target);
     camera = valid(value) && value.layout === graph.layout
       ? {x: value.x, y: value.y, zoom: clamp(value.zoom, minZoom, 2.5)} : null;
@@ -242,7 +244,7 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
   });
   panel.addEventListener('keydown', event => {
     if (expanded && event.key === 'Tab') {
-      const stops = [...panel.querySelectorAll('button:not(:disabled), [tabindex="0"]')]
+      const stops = [...panel.querySelectorAll('button:not(:disabled), select:not(:disabled), [tabindex="0"]')]
         .filter(element => element.getClientRects().length);
       const next = event.shiftKey ? stops.at(-1) : stops[0];
       const boundary = event.shiftKey ? stops[0] : stops.at(-1);
@@ -255,7 +257,7 @@ function createBoardCanvas({root, board, shownStatus, tagChip, selectTask, save,
       if (expanded) { expand(); query('[data-map-action="expand"]').focus(); }
       return;
     }
-    if (event.ctrlKey || event.metaKey || event.altKey || event.target.closest('[data-category-tabs]')) return;
+    if (event.ctrlKey || event.metaKey || event.altKey || event.target.closest('[data-category-tabs], select')) return;
     const moves = {ArrowLeft: [-80, 0], ArrowRight: [80, 0], ArrowUp: [0, -80], ArrowDown: [0, 80]};
     if (moves[event.key]) {
       const [x, y] = moves[event.key];

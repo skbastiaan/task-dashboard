@@ -125,9 +125,10 @@ function buildBoardGraph(board, minimumHeight = 108) {
 
 /* Scope projections retain only direct links touching a member of the selection. */
 function projectBoardScope(board, scope) {
-  const members = new Set(board.tasks.filter(task => scope === 'all'
-    || scope === `phase:${task.phase}`
-    || (task.tags || []).some(tag => scope === `tag:${tag.toLowerCase()}`)).map(task => task.id));
+  const [stage, category] = boardScopeParts(scope);
+  const members = new Set(board.tasks.filter(task => (stage === 'all' || stage === `phase:${task.phase}`)
+    && (category === 'all' || (task.tags || []).some(tag => category === `tag:${tag.toLowerCase()}`)))
+    .map(task => task.id));
   const included = new Set(members);
   for (const task of board.tasks) for (const dep of task.depends_on) {
     if (members.has(task.id) || members.has(dep)) { included.add(task.id); included.add(dep); }
@@ -138,38 +139,76 @@ function projectBoardScope(board, scope) {
   }))};
 }
 
+function boardScopeParts(scope) {
+  if (typeof scope !== 'string') return ['all', 'all'];
+  if (scope.startsWith('filter:')) {
+    try {
+      const value = JSON.parse(scope.slice(7));
+      if (Array.isArray(value) && value.length === 2 && value.every(item => typeof item === 'string')) return value;
+    } catch {}
+    return ['all', 'all'];
+  }
+  return scope.startsWith('tag:') ? ['all', scope] : [scope, 'all'];
+}
+
 function createBoardScopes({root, board, saved, change}) {
   const select = root.querySelector('[data-flow-scope]');
   const tabs = root.querySelector('[data-category-tabs]');
-  const options = new Map([['all', 'All tasks']]);
+  const stages = new Map([['all', 'All stages']]);
+  board.phases.forEach(phase => stages.set(`phase:${phase.id}`, `${phase.id} · ${phase.title}`));
   const tags = new Map();
   board.tasks.forEach(task => (task.tags || []).forEach(tag => tags.set(tag.toLowerCase(), tag)));
-  [...tags].sort((a, b) => a[0].localeCompare(b[0])).forEach(([id, tag]) => options.set(`tag:${id}`, tag));
-  board.phases.forEach(phase => options.set(`phase:${phase.id}`, `${phase.id} · ${phase.title}`));
-  let flowScope = options.has(saved.flowScope) ? saved.flowScope : 'task';
-  let worktreeScope = options.has(saved.worktreeScope) ? saved.worktreeScope : 'all';
+  const categories = new Map([['all', 'All categories'], ...[...tags].sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([id, tag]) => [`tag:${id}`, tag])]);
+  const decode = (scope, fallback) => {
+    const [stage, category] = boardScopeParts(scope || fallback);
+    const chosen = stages.has(stage) || (stage === 'task' && fallback === 'task') ? stage : fallback;
+    return {stage: chosen, category: chosen !== 'task' && categories.has(category) ? category : 'all'};
+  };
+  let flow = decode(saved.flowScope, 'task'), worktree = decode(saved.worktreeScope, 'all');
+  const encode = ({stage, category}) => stage === 'task' ? 'task'
+    : category === 'all' ? stage : stage === 'all' ? category : `filter:${JSON.stringify([stage, category])}`;
   select.append(new Option('Selected task', 'task'));
-  for (const [value, label] of options) {
+  for (const [value, label] of stages) {
     select.append(new Option(label, value));
     const button = document.createElement('button');
     button.type = 'button'; button.textContent = label;
     button.dataset.scope = value;
-    button.addEventListener('click', () => { worktreeScope = value; change(); });
+    button.addEventListener('click', () => { worktree.stage = value; change(); });
     tabs.append(button);
   }
-  select.addEventListener('change', () => { flowScope = select.value; change(); });
+  const filters = ['flow', 'worktree'].map(view => {
+    const filter = root.querySelector(`[data-${view}-category]`);
+    for (const [value, label] of categories) filter.append(new Option(label, value));
+    filter.addEventListener('change', () => {
+      const state = view === 'flow' ? flow : worktree;
+      state.category = filter.value;
+      if (state.stage === 'task') state.stage = 'all';
+      change();
+    });
+    return filter;
+  });
+  select.addEventListener('change', () => {
+    flow.stage = select.value;
+    if (flow.stage === 'task') flow.category = 'all';
+    change();
+  });
   return {
-    state: () => ({flowScope, worktreeScope}),
+    state: () => ({flowScope: encode(flow), worktreeScope: encode(worktree)}),
     restore(state) {
-      if (state.flowScope === 'task' || options.has(state.flowScope)) flowScope = state.flowScope;
-      if (options.has(state.worktreeScope)) worktreeScope = state.worktreeScope;
+      if (typeof state.flowScope === 'string') flow = decode(state.flowScope, 'task');
+      if (typeof state.worktreeScope === 'string') worktree = decode(state.worktreeScope, 'all');
     },
     sync(view) {
-      select.value = flowScope;
+      select.value = flow.stage;
       select.parentElement.hidden = view !== 'flow';
+      filters[0].value = flow.category;
+      filters[1].value = worktree.category;
+      filters[0].parentElement.hidden = view !== 'flow';
+      filters[1].parentElement.hidden = view !== 'worktree';
       tabs.hidden = view !== 'worktree';
-      for (const button of tabs.children) button.setAttribute('aria-pressed', String(button.dataset.scope === worktreeScope));
-      return view === 'worktree' ? worktreeScope : flowScope;
+      for (const button of tabs.children) button.setAttribute('aria-pressed', String(button.dataset.scope === worktree.stage));
+      return encode(view === 'worktree' ? worktree : flow);
     }
   };
 }
